@@ -34,7 +34,8 @@ Specs are in `certapharm-specs/specs/`, diagrams in `certapharm-specs/diagrams/`
 - [x] Monorepo scaffold, strict TypeScript, ESLint rule that keeps Solana imports out of `domain` and `application`
 - [x] Design system (`design/design-system.html`)
 - [x] Spikes S1, S2 and S3 passed on devnet (see `apps/cli/SPIKES.md`)
-- [ ] Domain, use cases UC1 to UC6, CLI, web verification page
+- [x] Domain layer: GS1 value objects, aggregates, `VerdictPolicy` R1-R8 (91 unit tests)
+- [ ] Use cases UC1 to UC6, adapters, CLI, web verification page
 
 ## Run it
 

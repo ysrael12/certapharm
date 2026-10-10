@@ -1,4 +1,4 @@
-import { getProgramDerivedAddress, getUtf8Encoder, getBase58Decoder, type Address } from "@solana/kit";
+import { getBase58Decoder, type Address } from "@solana/kit";
 import {
   deriveCredentialPda, deriveSchemaPda, deriveAttestationPda, getCreateCredentialInstruction,
   getCreateSchemaInstruction, getCreateAttestationInstruction, fetchSchema, fetchMaybeAttestation,
