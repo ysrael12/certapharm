@@ -15,14 +15,17 @@ function unwrap<T>(r: Result<T, { code: string; message: string }>): T {
 }
 
 /** Builds the container once, prints one line per domain event, and runs the command. */
-function command(name: string, description: string, configure: (c: Command) => Command, run: (c: Container, opts: Record<string, string>) => Promise<void>) {
-  configure(program.command(name).description(description)).action(async (opts: Record<string, string>) => {
+function command(name: string, description: string, configure: (c: Command) => Command, run: (c: Container, opts: Record<string, string>, arg: string) => Promise<void>) {
+  configure(program.command(name).description(description)).action(async (...args: unknown[]) => {
+    // commander passes positional arguments first, then options, then the Command itself
+    const opts = (args.find((a) => typeof a === "object" && a !== null && !(a instanceof Command)) ?? {}) as Record<string, string>;
+    const arg = typeof args[0] === "string" ? args[0] : "";
     try {
       const c = await buildContainer();
       c.bus.subscribe("ParticipantAccredited", (e) => console.log(`  tx ${e.explorerUrl}`));
       c.bus.subscribe("BatchCertified", (e) => console.log(`  tx ${e.explorerUrl}`));
       c.bus.subscribe("CustodyEventRecorded", (e) => console.log(`  tx ${e.explorerUrl}`));
-      await run(c, opts);
+      await run(c, opts, arg);
     } catch (e) {
       fail({ code: "CLI_FAILURE", message: e instanceof Error ? e.message : String(e) });
     }
@@ -82,6 +85,87 @@ command("custody:record", "UC5 record a custody event", (c) => c
     ...(temperatureC !== undefined ? { temperatureC } : {}), ...(o.site ? { siteId: o.site } : {}),
   }));
   console.log(`recorded ${o.type} for ${o.gtin} lot ${o.lot}`);
+});
+
+function printReport(link: string, r: import("@certapharm/domain").VerificationReport): void {
+  console.log(`${r.verdict}  ${link}`);
+  if (r.batch) console.log(`  ${r.batch.productName} ${r.batch.dosage} · issuer ${r.batch.issuer.displayName ?? r.batch.issuer.wallet}`);
+  for (const f of r.findings) console.log(`  [${f.severity}] ${f.code}: ${f.message}`);
+  if (r.alert) console.log(`  alert ${r.alert.level} ${r.alert.reasonCode}: ${r.alert.publicNote}`);
+  for (const e of r.trail) console.log(`  ${new Date(e.occurredAt * 1000).toISOString()} ${e.type.padEnd(9)} ${e.actorName ?? e.actor} (${e.actorRole})${e.temperatureC !== undefined ? ` ${e.temperatureC} °C` : ""}`);
+}
+
+command("verify <link>", "UC6 verify a GS1 Digital Link (public, read-only)", (c) => c, async (c, _o, link) => {
+  const started = Date.now();
+  const report = unwrap(await c.verifyProduct.execute({ link }));
+  printReport(link, report);
+  console.log(`  (${Date.now() - started} ms)`);
+});
+
+command("alert:raise", "UC8 raise or replace a batch alert (Platform Authority)", (c) => c
+  .requiredOption("--gtin <gtin>").requiredOption("--lot <lot>")
+  .requiredOption("--level <level>", "RECALL|SUSPECTED_COUNTERFEIT|COLD_CHAIN_BREACH|REGULATOR_NOTICE")
+  .requiredOption("--reason <code>", "short reason code").requiredOption("--note <text>", "public note, at most 140 bytes"), async (c, o) => {
+  const { tx } = unwrap(await c.raiseAlert.raise({ by: c.authority, gtin: o.gtin!, lot: o.lot!, level: o.level!, reasonCode: o.reason!, publicNote: o.note! }));
+  console.log(`alert ${o.level} raised for ${o.gtin} lot ${o.lot}\n  tx ${tx.explorerUrl}`);
+});
+
+command("alert:clear", "UC8 clear a batch alert (Platform Authority)", (c) => c
+  .requiredOption("--gtin <gtin>").requiredOption("--lot <lot>"), async (c, o) => {
+  const { tx } = unwrap(await c.raiseAlert.clear({ by: c.authority, gtin: o.gtin!, lot: o.lot! }));
+  console.log(`alert cleared for ${o.gtin} lot ${o.lot}\n  tx ${tx.explorerUrl}`);
+});
+
+const GTIN = "2001234567893";
+const EXPIRY = "2027-12-31";
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+command("demo:seed", "UC10 build the demo world: batch A authentic, B recalled, C unknown (idempotent)", (c) => c
+  .option("--lots <a,b,c>", "lot numbers for batches A, B and C (C is never registered)", "L2026A,L2026B,L2026X"), async (c, o) => {
+  const [lotA, lotB, lotC] = (o.lots ?? "").split(",").map((s) => s.trim());
+  if (!lotA || !lotB || !lotC) fail({ code: "LOTS_INVALID", message: "--lots needs three comma-separated lot numbers" });
+  const people = [
+    { key: "labX", role: "MANUFACTURER", name: "Laboratório Demo", cnpj: "11111111000191" },
+    { key: "distY", role: "DISTRIBUTOR", name: "Distribuidora Demo", cnpj: "22222222000172" },
+    { key: "carrierZ", role: "CARRIER", name: "Transportadora Demo", cnpj: "33333333000153" },
+    { key: "pharmaW", role: "PHARMACY", name: "Farmácia Demo", cnpj: "44444444000134" },
+  ];
+  console.log(unwrap(await c.bootstrapPlatform.execute()).signatures.length === 0 ? "platform ready" : "platform created");
+  for (const p of people) {
+    const wallet = await c.resolveWallet(p.key);
+    const r = await c.accreditParticipant.execute({ by: c.authority, wallet, role: p.role, displayName: p.name, cnpj: p.cnpj });
+    if (!r.ok && r.error.code !== "ALREADY_ACCREDITED") fail(r.error);
+    console.log(`${r.ok ? "accredited" : "already accredited"} ${p.name} (${p.role})`);
+  }
+  unwrap(await c.onboardIssuer.execute({ issuer: await c.signerRef("labX") }));
+
+  const trail: [string, string, number?][] = [
+    ["labX", "SHIPPED"], ["carrierZ", "RECEIVED", 4.6], ["carrierZ", "SHIPPED"], ["distY", "RECEIVED"],
+    ["distY", "SHIPPED"], ["pharmaW", "RECEIVED"], ["pharmaW", "DISPENSED"],
+  ];
+  const lots = [{ lot: lotA, product: "Demo Amoxicilina 500 mg" }, { lot: lotB, product: "Demo Amoxicilina 500 mg" }];
+  for (const { lot, product } of lots) {
+    const reg = await c.registerBatch.execute({
+      issuer: await c.signerRef("labX"), gtin: GTIN, lot, expiry: EXPIRY, productName: product, dosage: "500 mg", country: "BR",
+    });
+    if (!reg.ok && reg.error.code !== "BATCH_ALREADY_CERTIFIED") fail(reg.error);
+    if (!reg.ok) { console.log(`lot ${lot} already certified, custody kept`); continue; }
+    console.log(`lot ${lot} certified`);
+    for (const [who, type, temp] of trail) {
+      unwrap(await c.recordCustodyEvent.execute({
+        actor: await c.signerRef(who), gtin: GTIN, lot, type, ...(temp !== undefined ? { temperatureC: temp } : {}),
+      }));
+      console.log(`  ${who} ${type}`);
+      await sleep(1500); // distinct block times keep the trail order unambiguous
+    }
+  }
+  unwrap(await c.raiseAlert.raise({
+    by: c.authority, gtin: GTIN, lot: lotB, level: "RECALL", reasonCode: "ANVISA-DEMO-001", publicNote: "Recall demonstrativo: não utilize este lote.",
+  }));
+  console.log(`alert RECALL on lot ${lotB}`);
+
+  console.log("\nLinks:");
+  for (const lot of [lotA, lotB, lotC]) console.log(`  ${c.publicBaseUrl}/01/02001234567893/10/${lot}`);
 });
 
 await program.parseAsync();

@@ -149,9 +149,9 @@ The full specification is in `certapharm-specs/specs/`, and the PlantUML sources
 
 ## Current state
 
-Working on devnet from the CLI: platform bootstrap, accreditation, issuer onboarding, batch certification and
-custody events, with the adapters tested against devnet. The remaining pieces are the public `verify` use case,
-the demo seed and the web verification page. Spike results with transaction links are in `apps/cli/SPIKES.md`.
+Working on devnet from the CLI: platform bootstrap, accreditation, issuer onboarding, batch certification,
+custody events, alerts, `cph verify` (all three verdicts, about one second per check) and `cph demo:seed`.
+The remaining piece is the public web verification page. Spike results with transaction links are in `apps/cli/SPIKES.md`.
 
 ## Run it
 
@@ -173,6 +173,13 @@ pnpm --filter @certapharm/cli cph issuer:onboard --as labX
 pnpm --filter @certapharm/cli cph batch:register --as labX --gtin 2001234567893 --lot L2026A \
   --expiry 2027-12-31 --product "Demo Amoxicilina 500 mg" --dosage "500 mg"
 pnpm --filter @certapharm/cli cph custody:record --as labX --gtin 2001234567893 --lot L2026A --type SHIPPED
+```
+
+Or build the whole demo world (one authentic batch, one recalled, one unknown) and check it:
+
+```sh
+pnpm --filter @certapharm/cli cph demo:seed
+pnpm --filter @certapharm/cli cph verify https://certapharm.vercel.app/01/02001234567893/10/L2026A
 ```
 
 All demo GTINs and names are fictitious. The `200` GTIN prefix is reserved by GS1 for restricted circulation, so

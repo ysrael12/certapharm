@@ -1,12 +1,12 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import {
-  AccreditParticipant, BootstrapPlatform, InMemoryEventBus, OnboardIssuer, RecordCustodyEvent, RegisterBatch,
-  type SignerRef,
+  AccreditParticipant, BootstrapPlatform, InMemoryEventBus, OnboardIssuer, RaiseAlert, RecordCustodyEvent, RegisterBatch,
+  VerifyProduct, type SignerRef,
 } from "@certapharm/application";
 import type { Clock, WalletAddress } from "@certapharm/domain";
 import {
-  Keyring, KitBatchKeyDeriver, MemoCustodyLedger, SasAccreditationRegistry, SasCertificateRegistry, SasIssuerOnboarding,
+  Keyring, KitBatchKeyDeriver, MemoCustodyLedger, SasAccreditationRegistry, SasAlertRegistry, SasCertificateRegistry, SasIssuerOnboarding,
   SasPlatformSetup, TxSender, loadKeyFile, loadOrCreateKeyFile, makeConnection,
 } from "@certapharm/infra-solana";
 
@@ -47,6 +47,7 @@ export async function buildContainer() {
   const onboarding = new SasIssuerOnboarding(conn.rpc, sender, keyring);
   const certificates = new SasCertificateRegistry(conn.rpc, sender, keyring, clock);
   const custody = new MemoCustodyLedger(conn.rpc, sender, keyring, clock);
+  const alerts = new SasAlertRegistry(conn.rpc, sender, platform, clock);
 
   /** A key name (`labX`) is loaded or created in `.keys/`; an address is used as is. */
   async function resolveWallet(nameOrAddress: string): Promise<WalletAddress> {
@@ -68,6 +69,8 @@ export async function buildContainer() {
     onboardIssuer: new OnboardIssuer(accreditation, onboarding),
     registerBatch: new RegisterBatch(accreditation, certificates, keys, clock, bus, publicBaseUrl),
     recordCustodyEvent: new RecordCustodyEvent(accreditation, certificates, custody, keys, clock, bus),
+    verifyProduct: new VerifyProduct(accreditation, certificates, custody, alerts, keys, clock),
+    raiseAlert: new RaiseAlert(alerts, keys, authority, clock),
   };
 }
 
