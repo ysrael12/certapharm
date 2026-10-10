@@ -35,7 +35,8 @@ Specs are in `certapharm-specs/specs/`, diagrams in `certapharm-specs/diagrams/`
 - [x] Design system (`design/design-system.html`)
 - [x] Spikes S1, S2 and S3 passed on devnet (see `apps/cli/SPIKES.md`)
 - [x] Domain layer: GS1 value objects, aggregates, `VerdictPolicy` R1-R8 (91 unit tests)
-- [ ] Use cases UC1 to UC6, adapters, CLI, web verification page
+- [x] Use cases UC1 to UC5 with in-memory fakes (19 tests), SAS and Memo adapters, `cph` commands for UC1 to UC5 working on devnet
+- [ ] UC6 `verify`, demo seed, web verification page
 
 ## Run it
 

@@ -4,6 +4,14 @@
   "private": true,
   "type": "module",
   "main": "dist/index.js",
-  "scripts": { "build": "tsc -p .", "test": "vitest run --passWithNoTests" },
-  "dependencies": { "@certapharm/application": "workspace:*", "@certapharm/domain": "workspace:*" }
+  "scripts": {
+    "build": "tsc -p .",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@certapharm/application": "workspace:*",
+    "@certapharm/domain": "workspace:*",
+    "@solana/kit": "5.5.1",
+    "sas-lib": "1.0.10"
+  }
 }

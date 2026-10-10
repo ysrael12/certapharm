@@ -53,6 +53,9 @@ importers:
       '@solana/kit':
         specifier: 5.5.1
         version: 5.5.1(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)
+      commander:
+        specifier: ^15.0.0
+        version: 15.0.0
       sas-lib:
         specifier: 1.0.10
         version: 1.0.10(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)
@@ -79,6 +82,12 @@ importers:
       '@certapharm/domain':
         specifier: workspace:*
         version: link:../domain
+      '@solana/kit':
+        specifier: 5.5.1
+        version: 5.5.1(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)
+      sas-lib:
+        specifier: 1.0.10
+        version: 1.0.10(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)
 
 packages:
 
@@ -1311,6 +1320,10 @@ packages:
   commander@14.0.2:
     resolution: {integrity: sha512-TywoWNNRbhoD0BXs1P3ZEScW8W5iKrnbithIl0YH+uCmBd0QpPOA8yc82DS3BIE5Ma6FnBVUsJ7wVUDz4dvOWQ==}
     engines: {node: '>=20'}
+
+  commander@15.0.0:
+    resolution: {integrity: sha512-z67u4ZhzCL/Tydu1lJARtEZYWbWaN7oYLHbsuzocr6y4N6WZAagG3RQ4FW61V1/0+jImpj293XfrcYnd1qxtPg==}
+    engines: {node: '>=22.12.0'}
 
   commander@2.20.3:
     resolution: {integrity: sha512-GpVkmM8vF2vQUkj2LvZmD35JxeJOLCwJ9cUkugyk2nuhbv3+mJvpLYYt+0+USMxE+oj+ey/lJEnhZw75x/OMcQ==}
@@ -3125,6 +3138,8 @@ snapshots:
   color-name@1.1.4: {}
 
   commander@14.0.2: {}
+
+  commander@15.0.0: {}
 
   commander@2.20.3: {}
 

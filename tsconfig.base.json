@@ -9,7 +9,6 @@
     "noImplicitOverride": true,
     "declaration": true,
     "skipLibCheck": true,
-    "esModuleInterop": true,
-    "outDir": "dist"
+    "esModuleInterop": true
   }
 }
