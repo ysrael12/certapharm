@@ -1,0 +1,68 @@
+' Certapharm palette
+!$INK = "#003049"
+!$PAPER = "#fdf0d5"
+!$OK = "#669bbc"
+!$BAD = "#c1121f"
+!$DEEP = "#780000"
+!$WARN = "#e0a100"
+!$CARD = "#fffaf0"
+
+skinparam backgroundColor $PAPER
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontColor $INK
+skinparam defaultFontSize 13
+skinparam shadowing false
+skinparam roundCorner 10
+skinparam ArrowColor $INK
+skinparam ArrowFontColor $INK
+skinparam ArrowFontSize 11
+skinparam TitleFontSize 20
+skinparam TitleFontColor $INK
+skinparam LegendBackgroundColor $CARD
+skinparam LegendBorderColor $OK
+skinparam NoteBackgroundColor $CARD
+skinparam NoteBorderColor $OK
+
+skinparam package {
+  BackgroundColor $CARD
+  BorderColor $INK
+  FontColor $INK
+}
+skinparam rectangle {
+  BackgroundColor $CARD
+  BorderColor $INK
+}
+skinparam component {
+  BackgroundColor $CARD
+  BorderColor $INK
+}
+skinparam class {
+  BackgroundColor $CARD
+  BorderColor $INK
+  HeaderBackgroundColor $CARD
+  ArrowColor $INK
+  StereotypeFontColor $DEEP
+}
+skinparam sequence {
+  LifeLineBorderColor $OK
+  ParticipantBackgroundColor $INK
+  ParticipantFontColor $PAPER
+  ParticipantBorderColor $INK
+  ActorBackgroundColor $INK
+  ActorBorderColor $INK
+  BoxBackgroundColor $CARD
+  BoxBorderColor $OK
+  GroupBorderColor $OK
+  GroupBackgroundColor $CARD
+  DividerBackgroundColor $CARD
+}
+skinparam state {
+  BackgroundColor $CARD
+  BorderColor $INK
+  StartColor $INK
+  EndColor $INK
+}
+skinparam database {
+  BackgroundColor $CARD
+  BorderColor $INK
+}

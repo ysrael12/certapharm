@@ -1,0 +1,64 @@
+@startuml 04-seq-register-batch
+!include _theme.puml
+title UC2 + UC3 + UC4 — Accredit, onboard issuer, register batch
+autonumber
+
+actor "Platform\nAuthority" as PA
+actor "Manufacturer\n(issuer)" as MF
+participant "cph CLI" as CLI
+box "application" #fffaf0
+  participant "AccreditParticipant" as UC2
+  participant "OnboardIssuer" as UC3
+  participant "RegisterBatch" as UC4
+end box
+box "domain" #f3dfb4
+  participant "Batch\n<<aggregate>>" as B
+end box
+box "infra-solana (ACL)" #d9e6ef
+  participant "SasAccreditation\nRegistry" as AR
+  participant "SasCertificate\nRegistry" as CR
+  participant "BatchKeyDeriver" as BK
+end box
+participant "SAS program\n(devnet)" as SAS
+
+== Accreditation (once per company) ==
+PA -> CLI : participant:accredit labX MANUFACTURER
+CLI -> UC2 : execute()
+UC2 -> AR : find(labX)
+AR -> SAS : fetchMaybeAttestation(platformCred, participantSchema, nonce=labX)
+SAS --> AR : none
+UC2 -> AR : accredit(labX, MANUFACTURER, legalIdHash)
+AR -> SAS : createAttestation (authority = PA)
+SAS --> AR : signature
+UC2 --> CLI : ParticipantAccredited
+
+== Issuer onboarding (once per issuer) ==
+MF -> CLI : issuer:onboard
+CLI -> UC3 : execute()
+UC3 -> AR : find(labX) → role MANUFACTURER ✓
+UC3 -> SAS : createCredential("certapharm-issuer", signers=[labX])\ncreateSchema("batch", v1)
+note right : idempotent — skipped if PDAs exist
+
+== Register batch ==
+MF -> CLI : batch:register gtin lot expiry …
+CLI -> UC4 : execute(input)
+UC4 -> UC4 : build VOs (Gtin, LotNumber, ExpiryDate)
+UC4 -> AR : find(labX)
+AR --> UC4 : Accreditation(MANUFACTURER)
+UC4 -> BK : derive(gtin, lot)
+BK --> UC4 : BatchKey
+UC4 -> CR : findByBatchKey(batchKey, [labX])
+CR -> SAS : getMultipleAccounts(attestation PDA)
+SAS --> CR : none
+UC4 -> B : certify(issuerAcc, now)
+alt invariants B1–B3 hold
+  B --> UC4 : BatchCertified
+  UC4 -> CR : issue(labX, batch)
+  CR -> SAS : createAttestation\n(issuerCred, batchSchema, nonce = BatchKey,\ndata = gtin,lot,expiry,name,dosage,country)
+  SAS --> CR : signature
+  UC4 --> CLI : ok + verify URL
+else violation
+  B --> UC4 : DomainError
+  UC4 --> CLI : error (no tx sent)
+end
+@enduml

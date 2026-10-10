@@ -1,0 +1,78 @@
+@startuml 08-onchain-accounts
+!include _theme.puml
+title On-chain account map (no custom program)
+skinparam linetype polyline
+hide empty members
+
+package "SAS program 22zoJMtdu4tQc2PzL74ZUT7FrwgB1Udec8DdW4yw4BdG" #fffaf0 {
+  class "Platform Credential\ncertapharm" as PC <<PDA>> {
+    authority = Platform Authority
+    signers = [Platform Authority]
+  }
+  class "Schema participant v1" as SP <<PDA>> {
+    layout [u8, String, String]
+    role · display_name · legal_id_hash
+  }
+  class "Schema batch-alert v1" as SA <<PDA>> {
+    layout [u8, String, String, i64]
+    level · reason_code · public_note · raised_at
+  }
+  class "Participant attestation" as AP <<PDA>> {
+    nonce = participant wallet
+    signer = Platform Authority
+  }
+  class "Alert attestation" as AA <<PDA>> {
+    nonce = BatchKey
+  }
+
+  class "Issuer Credential\ncertapharm-issuer" as IC <<PDA, one per issuer>> {
+    authority = issuer wallet
+    signers = [issuer wallet]
+  }
+  class "Schema batch v1" as SB <<PDA>> {
+    layout [String, String, i64, String, String, String]
+    gtin · lot · expiry · product_name · dosage · country
+  }
+  class "Certificate of Origin\n(batch attestation)" as AB <<PDA>> {
+    nonce = BatchKey
+    signer = issuer
+  }
+}
+
+class "BatchKey" as BK <<derived address, no account>> {
+  PDA of seeds: certapharm:batch:v1, gtin14, lot
+}
+
+package "Custody transactions" #f3dfb4 {
+  class "Custody tx" as TX <<transaction>> {
+    1. System transfer 0 lamports, BatchKey as read-only ref
+    2. Memo cph1 {t,b,g,l,tc,loc}, signed by actor
+  }
+}
+
+package "Bubblegum V2 (per issuer)" #d9e6ef {
+  class "Merkle tree" as MT <<account>> {
+    maxDepth 14 · buffer 64 · canopy 8
+    creator = issuer
+  }
+  class "Unit seal (cNFT leaf)" as LEAF <<compressed>> {
+    owner = issuer
+    name "CPH lot-serial"
+    uri → /api/seal/...json
+  }
+}
+
+PC *-- SP
+PC *-- SA
+SP <-- AP : conforms
+SA <-- AA : conforms
+IC *-- SB
+SB <-- AB : conforms
+BK <.. AB : nonce
+BK <.. AA : nonce
+BK <.. TX : reference key
+AP ..> IC : issuer accredited?\n(verifier check)
+AP ..> TX : actor accredited?\n(verifier check)
+MT *-- LEAF
+LEAF ..> AB : same gtin + lot
+@enduml

@@ -1,0 +1,6 @@
+{
+  "name": "@certapharm/web",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": { "build": "echo web: pending", "test": "echo web: pending" }
+}

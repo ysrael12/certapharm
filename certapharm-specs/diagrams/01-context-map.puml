@@ -1,0 +1,44 @@
+@startuml 01-context-map
+!include _theme.puml
+title Certapharm — Context Map (DDD)
+left to right direction
+skinparam nodesep 40
+skinparam ranksep 70
+
+rectangle "**BC1 Accreditation**\n<<supporting>>\nParticipant · Role\nAccreditation" as BC1 #fffaf0
+rectangle "**BC2 Origin Certification**\n<<core>>\nBatch · CertificateOfOrigin" as BC2 #f3dfb4
+rectangle "**BC3 Chain of Custody**\n<<core>>\nCustodyTrail · CustodyEvent" as BC3 #f3dfb4
+rectangle "**BC4 Unit Sealing**\n<<core, cuttable>>\nUnitSeal" as BC4 #fffaf0
+rectangle "**BC5 Regulatory Alerts**\n<<supporting>>\nBatchAlert" as BC5 #fffaf0
+rectangle "**BC6 Public Verification**\n<<core · read model>>\nVerdictPolicy · Verdict" as BC6 #d9e6ef
+
+rectangle "**Shared Kernel: GS1**\nGtin · LotNumber · SerialNumber\nExpiryDate · Gs1DigitalLink · BatchKey" as SK #ffffff
+rectangle "**Solana ACL**\n<<anti-corruption layer>>\nSAS · Memo · Bubblegum · RPC · DAS" as ACL #003049;text:fdf0d5
+
+BC1 --> BC2 : U/S\n"is issuer accredited?"
+BC1 --> BC3 : U/S\n"is actor accredited?"
+BC1 --> BC4 : U/S
+BC1 --> BC5 : U/S
+BC2 --> BC3 : CF\nBatchKey
+BC2 --> BC4 : CF\nBatchKey
+BC2 --> BC5 : CF\nBatchKey
+
+BC1 ..> BC6 : read
+BC2 ..> BC6 : read
+BC3 ..> BC6 : read
+BC4 ..> BC6 : read
+BC5 ..> BC6 : read
+
+BC2 -[#669bbc]- SK
+BC6 -[#669bbc]- SK
+
+BC6 -[#780000,bold]-> ACL
+BC2 -[#780000,bold]-> ACL
+
+legend right
+  **U/S** Upstream / Supplier (downstream = Customer)
+  **CF** Conformist — references a batch only by BatchKey
+  **read** downstream read model, never writes
+  Blue line = Shared Kernel · Red = all contexts reach Solana only via the ACL
+endlegend
+@enduml

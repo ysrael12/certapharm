@@ -1,0 +1,22 @@
+@startuml 03-batch-lifecycle
+!include _theme.puml
+title Batch lifecycle (as the public verifier sees it)
+
+state "Unknown\n<<NOT_RECOGNIZED>>" as Unknown #f6c9cc
+state "Certified\n<<AUTHENTIC>>" as Certified #d9e6ef
+state "Certified + Alert\n<<AUTHENTIC_WITH_ALERT>>" as Alerted #f7e3a8
+state "Expired\n<<AUTHENTIC_WITH_ALERT>>" as Expired #f7e3a8
+state "Withdrawn\n<<NOT_RECOGNIZED>>" as Withdrawn #f6c9cc
+
+[*] --> Unknown
+Unknown --> Certified : BatchCertified\n(SAS batch attestation by\naccredited issuer)
+Certified --> Certified : CustodyEventRecorded\n(memo tx)
+Certified --> Alerted : AlertRaised\n(SAS batch-alert)
+Alerted --> Certified : AlertCleared
+Certified --> Expired : now > expiry\n(derived, never written)
+Alerted --> Expired : now > expiry
+Certified --> Withdrawn : BatchWithdrawn\n(issuer closes attestation)
+Alerted --> Withdrawn : BatchWithdrawn
+Certified --> Unknown : issuer accreditation revoked\n(R2 at read time)
+Withdrawn --> [*]
+@enduml

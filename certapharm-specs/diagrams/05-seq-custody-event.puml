@@ -1,0 +1,46 @@
+@startuml 05-seq-custody-event
+!include _theme.puml
+title UC5 — Record a signed custody event
+autonumber
+
+actor "Distributor" as D
+participant "cph CLI" as CLI
+box "application" #fffaf0
+  participant "RecordCustody\nEvent" as UC5
+end box
+box "domain" #f3dfb4
+  participant "CustodyTrail\n<<aggregate>>" as CT
+end box
+box "infra-solana (ACL)" #d9e6ef
+  participant "SasAccreditation\nRegistry" as AR
+  participant "SasCertificate\nRegistry" as CR
+  participant "MemoCustody\nLedger" as ML
+end box
+participant "Solana devnet\n(System + Memo)" as SOL
+
+D -> CLI : custody:record gtin lot RECEIVED --temp 4.6
+CLI -> UC5 : execute()
+UC5 -> AR : find(distributor)
+AR --> UC5 : DISTRIBUTOR ✓ (C1)
+UC5 -> AR : listIssuers()  [cached 60 s]
+UC5 -> CR : findByBatchKey(batchKey, issuers)
+CR --> UC5 : certificate, not expired ✓ (C2)
+UC5 -> CT : record(actorAcc, RECEIVED, now)
+CT --> UC5 : role × type allowed ✓ (C3)\nCustodyEventRecorded
+UC5 -> ML : record(actor, event)
+ML -> ML : build tx\n① transfer 0 lamports actor→actor\n   + BatchKey as read-only reference\n② memo "cph1 {t,b,g,l,tc,loc}"\n   signed by actor
+ML -> SOL : sendAndConfirm
+SOL --> ML : signature
+ML --> UC5 : TxRef(explorerUrl)
+UC5 --> CLI : ok
+
+== Later: anyone reads the trail ==
+ML -> SOL : getSignaturesForAddress(BatchKey)
+SOL --> ML : [sig…]
+ML -> SOL : getTransaction(sig) ×N (parallel)
+ML -> ML : parse memo, keep b == BatchKey,\nactor = memo signer
+note over ML
+  Fallback if the reference pattern fails (spike S2):
+  memo-only tx + signature stored in custody_index projection
+end note
+@enduml

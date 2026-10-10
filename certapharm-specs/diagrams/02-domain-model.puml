@@ -1,0 +1,142 @@
+@startuml 02-domain-model
+!include _theme.puml
+title Certapharm — Domain Model (aggregates, entities, value objects)
+skinparam linetype ortho
+hide empty members
+
+package "Shared Kernel · GS1" #ffffff {
+  class Gtin <<VO>> {
+    value: string(14)
+    +create(raw): Result<Gtin>
+  }
+  class LotNumber <<VO>>
+  class SerialNumber <<VO>>
+  class ExpiryDate <<VO>>
+  class BatchKey <<VO>> {
+    value: Address
+    +derive(gtin, lot)
+  }
+  class Gs1DigitalLink <<VO>> {
+    gtin, lot, serial?, expiry?
+    +parse(input)
+  }
+}
+
+package "BC1 Accreditation" {
+  class Participant <<Aggregate Root>> {
+    wallet: WalletAddress
+    role: ParticipantRole
+    displayName: string
+    legalIdHash: LegalIdHash
+    status: ACTIVE | REVOKED
+    --
+    +accredit() : ParticipantAccredited
+    +revoke() : ParticipantRevoked
+  }
+  enum ParticipantRole {
+    MANUFACTURER
+    IMPORTER
+    DISTRIBUTOR
+    CARRIER
+    PHARMACY
+  }
+}
+
+package "BC2 Origin Certification" #f3dfb4 {
+  class Batch <<Aggregate Root>> {
+    key: BatchKey
+    gtin: Gtin
+    lot: LotNumber
+    expiry: ExpiryDate
+    productName, dosage, country
+    issuer: WalletAddress
+    status: DRAFT|CERTIFIED|WITHDRAWN|EXPIRED
+    --
+    +certify(issuerAcc, now) : BatchCertified
+    +withdraw(by) : BatchWithdrawn
+  }
+  class CertificateOfOrigin <<VO>> {
+    attestation: Address
+    issuerCredential: Address
+  }
+}
+
+package "BC3 Chain of Custody" #f3dfb4 {
+  class CustodyTrail <<Aggregate Root>> {
+    batchKey: BatchKey
+    --
+    +record(actorAcc, type, now) : CustodyEventRecorded
+    +findings() : Finding[]
+  }
+  class CustodyEvent <<Entity>> {
+    signature: TxSignature
+    type: SHIPPED|RECEIVED|STORED|DISPENSED
+    actor: WalletAddress
+    occurredAt: Instant
+    temperatureC?
+    locationHash?
+  }
+}
+
+package "BC4 Unit Sealing" {
+  class UnitSeal <<Aggregate Root>> {
+    unit: (gtin, lot, serial)
+    batchKey: BatchKey
+    assetId, tree, leafIndex
+    status: SEALED | REVOKED
+  }
+}
+
+package "BC5 Regulatory Alerts" {
+  class BatchAlert <<Aggregate Root>> {
+    batchKey: BatchKey
+    level: RECALL|SUSPECTED_COUNTERFEIT|\nCOLD_CHAIN_BREACH|REGULATOR_NOTICE
+    reasonCode, publicNote
+    raisedAt
+  }
+}
+
+package "BC6 Public Verification" #d9e6ef {
+  class VerdictPolicy <<Domain Service>> {
+    +evaluate(snapshot) : VerificationReport
+  }
+  class VerificationSnapshot <<VO>>
+  class VerificationReport <<VO>> {
+    verdict: Verdict
+    findings: Finding[]
+  }
+  enum Verdict {
+    AUTHENTIC
+    AUTHENTIC_WITH_ALERT
+    NOT_RECOGNIZED
+  }
+}
+
+Participant --> ParticipantRole
+Batch *-- CertificateOfOrigin
+Batch --> BatchKey
+Batch --> Gtin
+Batch --> LotNumber
+Batch --> ExpiryDate
+Batch ..> Participant : issuer (by wallet)
+CustodyTrail "1" *-- "0..*" CustodyEvent
+CustodyTrail ..> Batch : by BatchKey
+CustodyEvent ..> Participant : actor (by wallet)
+UnitSeal ..> Batch : by BatchKey
+UnitSeal --> SerialNumber
+BatchAlert ..> Batch : by BatchKey
+VerdictPolicy ..> VerificationSnapshot
+VerdictPolicy ..> VerificationReport
+VerificationReport --> Verdict
+Gs1DigitalLink ..> BatchKey : derives
+
+note bottom of VerdictPolicy
+  R1 no certificate → NOT_RECOGNIZED
+  R2 issuer not accredited → NOT_RECOGNIZED
+  R3/R4 unit not sealed / revoked → NOT_RECOGNIZED
+  R5 alert → WITH_ALERT
+  R6 expired → WITH_ALERT
+  R7 custody gap / cold-chain → WITH_ALERT
+  R8 else → AUTHENTIC
+end note
+@enduml

@@ -1,0 +1,66 @@
+@startuml 07-components
+!include _theme.puml
+title Hexagonal architecture — ports & adapters
+left to right direction
+skinparam nodesep 30
+skinparam ranksep 60
+
+package "apps (driving adapters)" {
+  component "apps/web\nNext.js · verify page\n/api/verify · /audit" as WEB
+  component "apps/cli\ncph commands\ndemo:seed" as CLI
+}
+
+package "packages/application" #fffaf0 {
+  component "Use cases\nRegisterBatch · RecordCustodyEvent\nVerifyProduct · AccreditParticipant\nOnboardIssuer · SealUnits · RaiseAlert" as UC
+  portin "AccreditationRegistry" as P1
+  portin "CertificateRegistry" as P2
+  portin "CustodyLedger" as P3
+  portin "SealMinter / SealReader" as P4
+  portin "AlertRegistry" as P5
+  portin "SealIndex" as P6
+}
+
+package "packages/domain  (pure TS, no I/O)" #f3dfb4 {
+  component "Aggregates\nParticipant · Batch · CustodyTrail\nUnitSeal · BatchAlert" as AGG
+  component "VerdictPolicy" as VP
+  component "GS1 shared kernel" as GS1
+}
+
+package "packages/infra-solana (driven adapters / ACL)" #d9e6ef {
+  component "SasAccreditationRegistry\nSasCertificateRegistry\nSasAlertRegistry" as SASA
+  component "MemoCustodyLedger" as MEMOA
+  component "BubblegumSealMinter\nDasSealReader" as BGA
+  component "LibsqlSealIndex" as LIB
+}
+
+cloud "Solana devnet" as SOL {
+  component "Solana Attestation\nService" as SAS
+  component "Memo v2 + System" as MEMO
+  component "Bubblegum V2\n(state compression)" as BG
+}
+cloud "DAS RPC\n(Helius / Triton)" as DAS
+database "libSQL\nprojections" as DB
+
+WEB --> UC
+CLI --> UC
+UC --> AGG
+UC --> VP
+AGG --> GS1
+UC --> P1
+UC --> P2
+UC --> P3
+UC --> P4
+UC --> P5
+UC --> P6
+P1 <|.. SASA
+P2 <|.. SASA
+P5 <|.. SASA
+P3 <|.. MEMOA
+P4 <|.. BGA
+P6 <|.. LIB
+SASA --> SAS : sas-lib 1.0.10\n@solana/kit 5.5
+MEMOA --> MEMO : hand-built ix\n@solana/kit 5.5
+BGA --> BG : mpl-bubblegum 6 + Umi
+BGA --> DAS : getAsset
+LIB --> DB
+@enduml

@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.env
+.keys/
+data/
+*.tsbuildinfo
+SKILLS/
+.claude/settings.local.json
+.next/

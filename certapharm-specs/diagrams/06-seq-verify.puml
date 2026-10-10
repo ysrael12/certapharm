@@ -1,0 +1,55 @@
+@startuml 06-seq-verify
+!include _theme.puml
+title UC6 — Public verification (scan → verdict, p95 < 2 s)
+autonumber
+
+actor "Patient" as P
+participant "Phone camera" as CAM
+participant "apps/web\n/01/{gtin}/10/{lot}/21/{serial}" as WEB
+box "application" #fffaf0
+  participant "VerifyProduct" as UC6
+end box
+box "domain" #f3dfb4
+  participant "VerdictPolicy\n<<domain service>>" as VP
+end box
+box "infra-solana (ACL)" #d9e6ef
+  participant "Accreditation" as AR
+  participant "Certificates" as CR
+  participant "Alerts" as AL
+  participant "Custody" as ML
+  participant "Seals (DAS)" as SR
+end box
+
+P -> CAM : point at GS1 QR
+CAM -> WEB : GET GS1 Digital Link
+WEB -> UC6 : execute(link)
+UC6 -> UC6 : parse link → gtin, lot, serial\nBatchKey = derive(gtin, lot)
+par
+  UC6 -> AR : listIssuers()  [cache 60 s]
+  AR --> UC6 : accredited issuers
+  UC6 -> CR : findByBatchKey(key, issuers)
+  CR --> UC6 : certificate?
+else
+  UC6 -> AL : find(key)
+  AL --> UC6 : alert?
+else
+  UC6 -> ML : readTrail(key)
+  ML --> UC6 : raw events
+end
+UC6 -> AR : findMany(memo signers)
+AR --> UC6 : accreditations
+opt serial present and SEALS_ENABLED
+  UC6 -> SR : status(unit)
+  SR --> UC6 : SEALED | REVOKED | NOT_FOUND
+end
+UC6 -> VP : evaluate(snapshot)
+VP --> UC6 : VerificationReport(verdict, findings)
+UC6 --> WEB : report
+alt AUTHENTIC
+  WEB --> P : <back:#669bbc> Authentic </back> + trail
+else AUTHENTIC_WITH_ALERT
+  WEB --> P : <back:#e0a100> Authentic, with alert </back> + note
+else NOT_RECOGNIZED
+  WEB --> P : <back:#c1121f><color:#fdf0d5> Not recognized </color></back> — don't buy
+end
+@enduml

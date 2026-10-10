@@ -1,0 +1,246 @@
+<title>Certapharm Design System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Layout: one narrow column; palette strip first, then verdict screens as phone-width specimens, then rules. */
+:root {
+  /* brand palette (fixed values) */
+  --molten-lava: #780000;
+  --brick-red: #c1121f;
+  --papaya-whip: #fdf0d5;
+  --deep-space: #003049;
+  --steel-blue: #669bbc;
+  --amber: #e0a100;
+  /* theme roles */
+  --bg: #fdf0d5;
+  --surface: #fff8e8;
+  --text: #003049;
+  --muted: #3d5a6c;
+  --line: #d9c9a6;
+  --link: #003049;
+  --focus: #003049;
+  --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+  --gutter: 20px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #00202f; --surface: #002a3f; --text: #fdf0d5; --muted: #9db8c8;
+    --line: #174a63; --link: #669bbc; --focus: #669bbc;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #00202f; --surface: #002a3f; --text: #fdf0d5; --muted: #9db8c8;
+  --line: #174a63; --link: #669bbc; --focus: #669bbc;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--text); font: 400 15px/1.6 var(--font-body); padding-inline: var(--gutter); }
+main { max-width: 880px; margin-inline: auto; padding-block: 40px 72px; display: flex; flex-direction: column; gap: 56px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: 40px; font-weight: 700; letter-spacing: -0.02em; }
+h2 { font-size: 24px; font-weight: 700; letter-spacing: -0.01em; }
+h3 { font-size: 16px; font-weight: 500; }
+p { margin: 0; max-width: 65ch; }
+.eyebrow { font: 500 12px/1 var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.lede { color: var(--muted); font-size: 17px; }
+header { display: flex; flex-direction: column; gap: 14px; }
+section { display: flex; flex-direction: column; gap: 20px; }
+code, .mono { font-family: var(--font-mono); font-size: 13px; }
+a { color: var(--link); }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+/* palette */
+.swatches { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0; border: 1px solid var(--line); }
+.sw { display: flex; flex-direction: column; justify-content: space-between; min-height: 168px; padding: 14px; gap: 24px; }
+.sw b { font: 700 16px/1.2 var(--font-display); }
+.sw .mono { display: flex; flex-direction: column; gap: 2px; font-size: 12px; }
+.sw.lava { background: var(--molten-lava); color: var(--papaya-whip); }
+.sw.brick { background: var(--brick-red); color: var(--papaya-whip); }
+.sw.whip { background: var(--papaya-whip); color: var(--deep-space); }
+.sw.space { background: var(--deep-space); color: var(--papaya-whip); }
+.sw.steel { background: var(--steel-blue); color: var(--deep-space); }
+.use { font: 400 12px/1.4 var(--font-body); }
+
+/* tables */
+.scroll { overflow-x: auto; border: 1px solid var(--line); }
+table { border-collapse: collapse; width: 100%; min-width: 560px; font-size: 14px; }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font: 500 12px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+tr:last-child td { border-bottom: 0; }
+td.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.chip { display: inline-block; padding: 2px 8px; font: 500 12px/1.5 var(--font-mono); border: 1px solid currentColor; }
+.pass { color: var(--text); }
+
+/* verdict specimens */
+.screens { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; align-items: start; }
+.phone { border: 1px solid var(--line); background: var(--surface); display: flex; flex-direction: column; }
+.band { padding: 22px 18px; display: flex; flex-direction: column; gap: 10px; }
+.band svg { width: 36px; height: 36px; }
+.band .h { font: 700 26px/1.1 var(--font-display); letter-spacing: -0.01em; }
+.band .s { font-size: 14px; }
+.band.ok { background: var(--steel-blue); color: var(--deep-space); }
+.band.warn { background: var(--amber); color: var(--deep-space); }
+.band.bad { background: var(--brick-red); color: var(--papaya-whip); }
+.meta { padding: 14px 18px; display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+.meta b { font: 500 15px/1.3 var(--font-display); }
+.meta .mono { color: var(--muted); }
+.trail { list-style: none; margin: 0; padding: 0 18px 16px; display: flex; flex-direction: column; gap: 10px; font-size: 13px; }
+.trail li { display: grid; grid-template-columns: 10px 1fr; gap: 10px; }
+.trail li::before { content: ""; width: 10px; height: 10px; margin-top: 5px; background: var(--steel-blue); border: 2px solid var(--text); }
+.trail small { color: var(--muted); display: block; }
+.badge { align-self: flex-start; font: 500 11px/1 var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; padding: 4px 6px; border: 1px solid var(--line); color: var(--muted); }
+
+/* type */
+.type { display: flex; flex-direction: column; border: 1px solid var(--line); }
+.type > div { display: grid; grid-template-columns: 130px 1fr; gap: 16px; align-items: baseline; padding: 14px; border-bottom: 1px solid var(--line); }
+.type > div:last-child { border-bottom: 0; }
+@media (max-width: 520px) { .type > div { grid-template-columns: 1fr; gap: 4px; } h1 { font-size: 32px; } }
+
+/* rules */
+.rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 24px 32px; }
+.rules li { margin-bottom: 8px; }
+.rules ul { margin: 12px 0 0; padding-left: 18px; }
+.theme { align-self: flex-start; background: transparent; color: var(--text); border: 1px solid var(--text); font: 500 13px/1 var(--font-mono); padding: 10px 14px; cursor: pointer; }
+.theme:hover { background: var(--text); color: var(--bg); }
+</style>
+
+<main>
+  <header>
+    <span class="eyebrow">Certapharm · Colosseum 2026 · devnet</span>
+    <h1>Certapharm Design System</h1>
+    <p class="lede">Cinco cores, duas fontes e três telas de veredito. O paciente vê uma resposta clara em menos de dois segundos, sem termos de blockchain.</p>
+    <button class="theme" id="theme-btn" type="button">Alternar tema</button>
+  </header>
+
+  <section aria-labelledby="pal">
+    <span class="eyebrow">Paleta</span>
+    <h2 id="pal">Cinco cores, cada uma com um trabalho</h2>
+    <div class="swatches">
+      <div class="sw space"><b>Deep Space Blue</b><div class="mono"><span>#003049</span><span>rgb 0 48 73</span></div><span class="use">Texto, cabeçalho, marca. Acento em qualquer lugar fora do vermelho.</span></div>
+      <div class="sw whip"><b>Papaya Whip</b><div class="mono"><span>#fdf0d5</span><span>rgb 253 240 213</span></div><span class="use">Fundo de página.</span></div>
+      <div class="sw steel"><b>Steel Blue</b><div class="mono"><span>#669bbc</span><span>rgb 102 155 188</span></div><span class="use">Faixa AUTHENTIC. Links sobre fundo escuro.</span></div>
+      <div class="sw brick"><b>Brick Red</b><div class="mono"><span>#c1121f</span><span>rgb 193 18 31</span></div><span class="use">Somente NOT_RECOGNIZED.</span></div>
+      <div class="sw lava"><b>Molten Lava</b><div class="mono"><span>#780000</span><span>rgb 120 0 0</span></div><span class="use">Hover e pressed do vermelho. Destaque do pitch.</span></div>
+    </div>
+    <p class="use" style="color:var(--muted)">Funcionais fora da marca: Amber <code>#e0a100</code> só para AUTHENTIC_WITH_ALERT e Muted <code>#3d5a6c</code> para texto secundário sobre o papel.</p>
+  </section>
+
+  <section aria-labelledby="ver">
+    <span class="eyebrow">Vereditos</span>
+    <h2 id="ver">Três telas, uma resposta sem rolar</h2>
+    <div class="screens">
+      <article class="phone" aria-label="Procedente">
+        <div class="band ok">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m8 12.5 3 3 5-6"/></svg>
+          <span class="h">Procedente</span>
+          <span class="s">Registrado por fabricante autorizado. Trilha de custódia íntegra.</span>
+        </div>
+        <div class="meta"><b>Demo Amoxicilina 500 mg</b><span>500 mg, 21 cápsulas</span><span class="mono">Lote L2026A · Val. 31/12/2027</span><span>Laboratório Demo</span></div>
+        <ul class="trail">
+          <li><span>Laboratório Demo enviou<small>11/10 13:02 · fabricante</small></span></li>
+          <li><span>Distribuidora recebeu<small>11/10 15:40 · 4 °C</small></span></li>
+          <li><span>Farmácia recebeu<small>12/10 09:15</small></span></li>
+        </ul>
+        <div class="meta"><span class="badge">devnet demo</span></div>
+      </article>
+      <article class="phone" aria-label="Procedente, com alerta">
+        <div class="band warn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+          <span class="h">Procedente, com alerta</span>
+          <span class="s">Recolhimento do lote. Fale com o farmacêutico antes de usar.</span>
+        </div>
+        <div class="meta"><b>Demo Dipirona 1 g</b><span>1 g, 10 comprimidos</span><span class="mono">Lote L2026B · Val. 30/06/2027</span><span>Laboratório Demo</span></div>
+        <div class="meta"><span class="badge">devnet demo</span></div>
+      </article>
+      <article class="phone" aria-label="Não reconhecido">
+        <div class="band bad">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+          <span class="h">Não reconhecido</span>
+          <span class="s">Não encontramos registro deste produto. Não compre nem use. Denuncie à Anvisa.</span>
+        </div>
+        <div class="meta"><span class="mono">GTIN 02001234567893 · Lote X9999</span></div>
+        <div class="meta"><span class="badge">devnet demo</span></div>
+      </article>
+    </div>
+  </section>
+
+  <section aria-labelledby="ctr">
+    <span class="eyebrow">Contraste</span>
+    <h2 id="ctr">Pares aprovados para texto</h2>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Texto</th><th>Fundo</th><th>Razão</th><th>Uso</th></tr></thead>
+        <tbody>
+          <tr><td>Deep Space Blue</td><td>Papaya Whip</td><td class="num">12,3 : 1</td><td>Corpo da página</td></tr>
+          <tr><td>Deep Space Blue</td><td>Steel Blue</td><td class="num">4,7 : 1</td><td>Faixa AUTHENTIC</td></tr>
+          <tr><td>Deep Space Blue</td><td>Amber</td><td class="num">6,0 : 1</td><td>Faixa AUTHENTIC_WITH_ALERT</td></tr>
+          <tr><td>Papaya Whip</td><td>Brick Red</td><td class="num">5,6 : 1</td><td>Faixa NOT_RECOGNIZED</td></tr>
+          <tr><td>Muted <code>#3d5a6c</code></td><td>Papaya Whip</td><td class="num">6,4 : 1</td><td>Texto secundário</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="use" style="color:var(--muted)">Valores calculados pela fórmula de luminância relativa do WCAG 2.2. A meta do projeto é 4,5 : 1 no texto do veredito e Lighthouse de acessibilidade ≥ 95.</p>
+  </section>
+
+  <section aria-labelledby="tip">
+    <span class="eyebrow">Tipografia</span>
+    <h2 id="tip">Space Grotesk para títulos, IBM Plex Sans para leitura</h2>
+    <div class="type">
+      <div><span class="mono">Veredito · 26/700</span><span style="font:700 26px/1.1 var(--font-display)">Procedente, com alerta</span></div>
+      <div><span class="mono">Título · 24/700</span><span style="font:700 24px/1.15 var(--font-display)">Trilha de custódia</span></div>
+      <div><span class="mono">Nome do produto · 15/500</span><span style="font:500 15px/1.3 var(--font-display)">Demo Amoxicilina 500 mg</span></div>
+      <div><span class="mono">Corpo · 15/400</span><span>Registrado por fabricante autorizado. Trilha de custódia íntegra.</span></div>
+      <div><span class="mono">Dado · Plex Mono 13</span><span class="mono">GTIN 02001234567893 · Lote L2026A</span></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="reg">
+    <span class="eyebrow">Regras</span>
+    <h2 id="reg">O que nunca muda</h2>
+    <div class="rules">
+      <div><h3>Cor e sinal</h3><ul>
+        <li>Vermelho <code>#c1121f</code> só em NOT_RECOGNIZED.</li>
+        <li>Cor nunca é o único sinal: toda faixa tem ícone e palavra.</li>
+        <li>Amber só em AUTHENTIC_WITH_ALERT.</li>
+        <li>Fora disso, o acento da marca é Deep Space Blue.</li></ul></div>
+      <div><h3>Texto da tela do paciente</h3><ul>
+        <li>Português por padrão; inglês com <code>?lang=en</code>.</li>
+        <li>Sem as palavras carteira, NFT, token ou atestado. Elas ficam em <code>/audit</code>.</li>
+        <li>Mostrar a hora da checagem e o selo "devnet demo" enquanto estiver na devnet.</li></ul></div>
+      <div><h3>Layout</h3><ul>
+        <li>Mobile primeiro, veredito visível sem rolar.</li>
+        <li>Ordem abaixo da faixa: produto, lote e validade, emissor, trilha, link para a prova.</li>
+        <li>Alvos de toque de 44 px no mínimo.</li></ul></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="tok">
+    <span class="eyebrow">Tokens</span>
+    <h2 id="tok">CSS para <code>apps/web</code></h2>
+    <div class="scroll"><pre style="margin:0;padding:16px;font:400 13px/1.6 var(--font-mono);color:var(--text)">:root {
+  --cph-ink:      #003049;  /* texto, cabeçalho, marca */
+  --cph-paper:    #fdf0d5;  /* fundo */
+  --cph-ok:       #669bbc;  /* faixa AUTHENTIC */
+  --cph-warn:     #e0a100;  /* só AUTHENTIC_WITH_ALERT */
+  --cph-bad:      #c1121f;  /* só NOT_RECOGNIZED */
+  --cph-bad-deep: #780000;  /* hover/pressed do vermelho */
+  --cph-muted:    #3d5a6c;  /* texto secundário */
+}</pre></div>
+  </section>
+</main>
+
+<script>
+(function () {
+  var btn = document.getElementById("theme-btn");
+  btn.addEventListener("click", function () {
+    var root = document.documentElement;
+    var dark = root.getAttribute("data-theme") === "dark" ||
+      (!root.hasAttribute("data-theme") && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    root.setAttribute("data-theme", dark ? "light" : "dark");
+  });
+})();
+</script>

@@ -1,0 +1,9 @@
+{
+  "name": "@certapharm/infra-solana",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": { "build": "tsc -p .", "test": "vitest run --passWithNoTests" },
+  "dependencies": { "@certapharm/application": "workspace:*", "@certapharm/domain": "workspace:*" }
+}
