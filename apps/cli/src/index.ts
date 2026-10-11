@@ -150,6 +150,7 @@ command("alert:clear", "UC8 clear a batch alert (Platform Authority)", (c) => c
 
 const GTIN = "2001234567893";
 const EXPIRY = "2027-12-31";
+const GTIN_14 = GTIN.padStart(14, "0");
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 command("demo:seed", "UC10 build the demo world: batch A authentic, B recalled, C unknown (idempotent)", (c) => c
@@ -201,6 +202,30 @@ command("demo:seed", "UC10 build the demo world: batch A authentic, B recalled, 
   console.log(`\nUnit seals, after "cph units:init --as labX" and "cph units:seal --as labX --gtin ${GTIN} --lot ${lotA} --serials 0001-0010":`);
   console.log(`  ${c.publicBaseUrl}/01/02001234567893/10/${lotA}/21/0001   sealed`);
   console.log(`  ${c.publicBaseUrl}/01/02001234567893/10/${lotA}/21/9999   never sealed`);
+});
+
+command("demo:qr", "UC10 write the demo QR codes to ./demo (point them at PUBLIC_BASE_URL)", (c) => c
+  .option("--lots <list>", "lots to print", "L2026D,L2026E,L2026X")
+  .option("--serials <list>", "extra unit QR codes for the first lot, e.g. 0001,9999", "0001,9999")
+  .option("--out <dir>", "output folder", "demo"), async (c, o) => {
+  const QRCode = (await import("qrcode")).default;
+  const { mkdirSync } = await import("node:fs");
+  const dir = resolve(process.cwd(), "../..", o.out ?? "demo");
+  mkdirSync(dir, { recursive: true });
+  const base = c.publicBaseUrl.replace(/\/$/, "");
+  const lots = (o.lots ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+  const serials = (o.serials ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+  const jobs = [
+    ...lots.map((lot) => ({ name: `qr-${lot}`, path: `/01/${GTIN_14}/10/${encodeURIComponent(lot)}` })),
+    ...serials.map((s) => ({ name: `qr-${lots[0]}-${s}`, path: `/01/${GTIN_14}/10/${encodeURIComponent(lots[0] ?? "")}/21/${encodeURIComponent(s)}` })),
+  ];
+  for (const j of jobs) {
+    await QRCode.toFile(resolve(dir, `${j.name}.png`), `${base}${j.path}`, { margin: 2, width: 512, errorCorrectionLevel: "M", color: { dark: "#003049", light: "#ffffff" } });
+    console.log(`  ${j.name}.png  ${base}${j.path}`);
+  }
+  if (base.includes("localhost") || base.includes("vercel.app") && base.includes("certapharm.vercel.app")) {
+    console.log(`\nNote: these point at ${base}. Set PUBLIC_BASE_URL in .env to the deployed address before printing.`);
+  }
 });
 
 await program.parseAsync();

@@ -18,5 +18,7 @@ export default {
   outputFileTracingRoot: root,
   // Solana SDKs stay as plain Node modules on the server; they are never bundled for the browser.
   serverExternalPackages: ["@solana/kit", "sas-lib", "@certapharm/runtime", "@certapharm/infra-solana", "@metaplex-foundation/umi", "@metaplex-foundation/umi-bundle-defaults", "@metaplex-foundation/mpl-bubblegum", "@metaplex-foundation/digital-asset-standard-api"],
+  // The issuer-to-tree map sits at the workspace root, outside this app, so ask the tracer to ship it with the functions.
+  outputFileTracingIncludes: { "/**": ["../../config/seal-trees.json"] },
   poweredByHeader: false,
 };

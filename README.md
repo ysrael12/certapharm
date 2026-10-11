@@ -228,7 +228,13 @@ pnpm --filter @certapharm/cli cph demo:seed
 pnpm --filter @certapharm/cli cph verify https://certapharm.vercel.app/01/02001234567893/10/L2026A
 ```
 
-Then open the site:
+To put the public site online, follow [`docs/DEPLOY.md`](docs/DEPLOY.md). To print the demo QR codes once it is live:
+
+```sh
+pnpm --filter @certapharm/cli cph demo:qr      # writes ./demo/qr-*.png for PUBLIC_BASE_URL
+```
+
+To run the site locally:
 
 ```sh
 # .env needs RPC_URL, PLATFORM_AUTHORITY (public key), PUBLIC_BASE_URL (the address printed in the QR codes)

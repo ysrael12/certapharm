@@ -6,6 +6,7 @@ import { readContainer } from "@/lib/container";
 import { resolveLang } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 30;
 export const metadata = { title: "Certapharm · Public proof" };
 
 const BASE58 = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;

@@ -1,6 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { loadReport, toApiResponse } from "@/lib/report";
 
+export const maxDuration = 30;
+
 const CACHE = "public, s-maxage=15, stale-while-revalidate=60";
 
 /** GET /api/verify?link=<urlencoded GS1 Digital Link or element string>. Spec 05 section 2. */

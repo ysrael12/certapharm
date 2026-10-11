@@ -3,6 +3,7 @@ import { resolveLang } from "@/lib/i18n";
 import { loadReport } from "@/lib/report";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 30;
 
 const safeDecode = (s: string) => { try { return decodeURIComponent(s); } catch { return s; } };
 
