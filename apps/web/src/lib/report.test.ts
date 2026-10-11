@@ -47,8 +47,20 @@ describe("/api/verify contract (spec 05 section 2)", () => {
   });
 
   it("a unit query reports the seal as NOT_CHECKED while seals are off", () => {
-    const body = toApiResponse(loaded(evaluateVerdict({ ...base, certificate: cert, trail: [] }), "0001"));
+    const body = toApiResponse(loaded(evaluateVerdict({ ...base, query: { ...base.query, serial: "0001" as never }, certificate: cert, trail: [] }), "0001"));
     expect(verifyResponseSchema.parse(body).unit).toEqual({ serial: "0001", seal: "NOT_CHECKED" });
+  });
+
+  it("a sealed unit carries its asset id; an unsealed one is NOT_RECOGNIZED with the unit echoed", () => {
+    const sealed = toApiResponse(loaded(evaluateVerdict({
+      ...base, query: { ...base.query, serial: "0001" as never }, certificate: cert, trail: [], sealsEnabled: true, seal: "SEALED", sealAssetId: "Asset111",
+    }), "0001"));
+    expect(verifyResponseSchema.parse(sealed).unit).toEqual({ serial: "0001", seal: "SEALED", assetId: "Asset111" });
+    const missing = toApiResponse(loaded(evaluateVerdict({
+      ...base, query: { ...base.query, serial: "9999" as never }, certificate: cert, trail: [], sealsEnabled: true, seal: "NOT_FOUND",
+    }), "9999"));
+    expect(verifyResponseSchema.parse(missing)).toMatchObject({ verdict: "NOT_RECOGNIZED", unit: { serial: "9999", seal: "NOT_FOUND" } });
+    expect(missing.findings[0]?.code).toBe("UNIT_NOT_SEALED");
   });
 
   it("rejects an extra field, so the shape cannot drift silently", () => {

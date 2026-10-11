@@ -14,7 +14,7 @@ SAS (`sas-lib@1.0.10`) para credenciamento, certificado de lote e alertas · Mem
 2. ≥ 3 eventos de custódia assinados (distribuidor → farmácia → dispensado) (UC5).
 3. Página pública: scan → um de três vereditos em < 2 s (UC6).
 
-Ordem de corte (do topo): UC9 withdraw → UI de operador → UC7 selos cNFT → custody_index fallback → `/audit`. Ver `specs/06-delivery-plan.md`.
+Ordem de corte (do topo): UC9 withdraw → ~~UI de operador~~ (feita) → ~~UC7 selos cNFT~~ (feito, CLI + verificação + `/api/seal`) → custody_index fallback → `/audit` (feita). Ver `specs/06-delivery-plan.md`.
 
 ## Arquitetura (hexagonal, pnpm workspaces)
 ```

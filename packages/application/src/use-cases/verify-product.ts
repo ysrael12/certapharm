@@ -3,7 +3,7 @@ import {
   type Clock, type CustodyEvent, type Participant, type Result, type VerificationReport, type VerificationSnapshot, type WalletAddress,
 } from "@certapharm/domain";
 import { guard, type AppError } from "../errors.js";
-import type { AccreditationRegistry, AlertRegistry, BatchKeyDeriver, CertificateRegistry, CustodyLedger } from "../ports/index.js";
+import type { AccreditationRegistry, AlertRegistry, BatchKeyDeriver, CertificateRegistry, CustodyLedger, SealFound, SealReader } from "../ports/index.js";
 
 const REPORT_TTL_MS = 15_000;
 
@@ -18,7 +18,8 @@ export class VerifyProduct {
     private readonly alerts: AlertRegistry,
     private readonly keys: BatchKeyDeriver,
     private readonly clock: Clock,
-    private readonly sealsEnabled = false,
+    /** When given, a query with a serial number is checked against the unit seals (UC7). */
+    private readonly seals?: SealReader,
   ) {}
 
   async execute(input: { link: string }): Promise<Result<VerificationReport, AppError>> {
@@ -37,12 +38,15 @@ export class VerifyProduct {
         this.alerts.find(batchKey),
         this.custody.readTrail(batchKey),
       ]);
+      const seal: SealFound | undefined = serial && certificate && this.seals
+        ? await this.seals.find(certificate.issuer, { gtin, lot, serial })
+        : undefined;
       const wallets = [...new Set<WalletAddress>([...raw.map((e) => e.actor), ...(certificate ? [certificate.issuer] : [])])];
       const people = await this.accreditation.findMany(wallets);
-      return { certificate, alert, raw, people };
+      return { certificate, alert, raw, people, seal };
     });
     if (!read.ok) return read;
-    const { certificate, alert, raw, people } = read.value;
+    const { certificate, alert, raw, people, seal } = read.value;
 
     const trail: CustodyEvent[] = raw.map((e) => {
       const who: Participant | undefined = people.get(e.actor);
@@ -65,8 +69,9 @@ export class VerifyProduct {
       } : {}),
       ...(alert ? { alert: { level: alert.level, reasonCode: alert.reasonCode, publicNote: alert.publicNote } } : {}),
       trail,
-      sealsEnabled: this.sealsEnabled,
-      seal: "NOT_CHECKED",
+      sealsEnabled: this.seals !== undefined,
+      seal: seal ? seal.status : "NOT_CHECKED",
+      ...(seal?.assetId ? { sealAssetId: seal.assetId } : {}),
       now: this.clock.now(),
     };
     const report = evaluateVerdict(snapshot);

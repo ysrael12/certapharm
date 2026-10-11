@@ -1,5 +1,5 @@
 import type {
-  Batch, BatchAlert, BatchKey, CustodyEventType, ExpiryDate, Gtin, Instant, LotNumber, Participant, WalletAddress,
+  Batch, BatchAlert, BatchKey, CustodyEventType, ExpiryDate, Gtin, Instant, LotNumber, Participant, SerialNumber, WalletAddress,
 } from "@certapharm/domain";
 
 export type { Clock } from "@certapharm/domain";
@@ -94,6 +94,22 @@ export interface AlertRegistry {
   find(batchKey: BatchKey): Promise<BatchAlert | null>;
   /** Every live alert. */
   list(): Promise<BatchAlert[]>;
+}
+
+/** BC4. One compressed NFT per unit, minted by the issuer into the issuer's own tree. */
+export interface SealMinter {
+  /** Creates the issuer's Merkle tree on first use. */
+  ensureTree(issuer: SignerRef): Promise<{ readonly tree: string; readonly created: boolean }>;
+  seal(issuer: SignerRef, unit: { batchKey: BatchKey; gtin: Gtin; lot: LotNumber; serial: SerialNumber }): Promise<TxRef & { readonly assetId: string; readonly leafIndex: number }>;
+}
+
+export interface SealFound {
+  readonly status: "SEALED" | "REVOKED" | "NOT_FOUND";
+  readonly assetId?: string;
+}
+/** Reads seals back. Only assets in the issuer's own tree count, so nobody can mint a fake seal into someone else's wallet. */
+export interface SealReader {
+  find(issuer: WalletAddress, unit: { gtin: Gtin; lot: LotNumber; serial: SerialNumber }): Promise<SealFound>;
 }
 
 export interface BatchKeyDeriver {

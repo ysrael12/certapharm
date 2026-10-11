@@ -79,6 +79,7 @@ export function VerdictView({ loaded, lang, path }: { loaded: LoadedReport; lang
             <div className="vmeta">
               <span>{pt ? "Lote" : "Lot"} {query.lot} · {pt ? "val." : "exp"} {fmtMonthYear(r.batch.expiry)}</span>
               <span>{r.batch.issuer.displayName ?? r.batch.issuer.wallet} · {regionName(r.batch.country, lang)}</span>
+              {r.unit?.seal === "SEALED" && <span>{pt ? "Série" : "Serial"} {r.unit.serial} · {pt ? "registrada pelo fabricante" : "registered by the maker"}</span>}
             </div>
             {r.trail.length > 0 && (
               <>
@@ -114,9 +115,15 @@ export function VerdictView({ loaded, lang, path }: { loaded: LoadedReport; lang
 
         {r.verdict === "NOT_RECOGNIZED" && (
           <>
-            <p className="vtitle">{pt ? "Nenhum registro encontrado" : "No record found"}</p>
+            <p className="vtitle">
+              {r.findings[0]?.code?.startsWith("UNIT_") ? (pt ? "Série não registrada" : "Serial number not registered") : (pt ? "Nenhum registro encontrado" : "No record found")}
+            </p>
             <div className="vmeta">
-              <span>{pt ? "Este lote nunca foi certificado. Não compre nem use." : "This lot was never certified. Don't buy or use it."}</span>
+              <span>
+                {r.findings[0]?.code === "UNIT_NOT_SEALED" || r.findings[0]?.code === "UNIT_REVOKED"
+                  ? (pt ? "O lote é real, mas o número de série desta caixa não foi registrado pelo fabricante. Não compre nem use." : "The lot is real, but this box's serial number was never registered by the maker. Don't buy or use it.")
+                  : (pt ? "Este lote nunca foi certificado. Não compre nem use." : "This lot was never certified. Don't buy or use it.")}
+              </span>
               <span className="mono">GTIN {query.gtin} · {pt ? "Lote" : "Lot"} {query.lot}{query.serial ? ` · ${query.serial}` : ""}</span>
             </div>
             <a className="vbtn bad" href="https://www.gov.br/anvisa" rel="noopener noreferrer">{pt ? "Denunciar à Anvisa" : "Report to Anvisa"}</a>

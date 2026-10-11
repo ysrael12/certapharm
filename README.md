@@ -114,12 +114,18 @@ stored as the first 8 hex characters of a hash, never as an address. The patient
 **Why:** the chain is permanent and public. Anything personal or commercially sensitive must be kept out
 before it is written, because it cannot be removed afterwards.
 
-### 9. Per-unit seals are optional
+### 9. Per-unit seals prove one box, not just its lot
 
-**Chosen:** compressed NFTs (Bubblegum V2) can seal individual boxes by serial number, held by the issuer.
-The consumer never owns a token.
-**Why:** batch-level proof covers the core promise. Unit seals add counterfeit detection per box, but cost
-more and need a DAS-capable RPC, so they are the first thing to cut if time runs out.
+**Chosen:** the issuer can seal each serial number of a certified batch with a compressed NFT (Bubblegum V2) minted
+into the issuer's own Merkle tree, so the consumer never holds a token. A scan of a box that carries a serial number
+(`/21/0001`) then needs a seal in that tree, or the answer is "Not recognized".
+**Why:** a batch certificate says the lot is real. It cannot tell a genuine box from a counterfeit that copies a real
+QR code, or one that invents a serial number inside a real lot. A seal per unit can.
+**Trust rule:** an asset counts only if it sits in the tree registered for that issuer (`config/seal-trees.json`).
+Anyone can mint a lookalike into an issuer's wallet from their own tree, so the wallet alone proves nothing.
+**Cost:** a fraction of a cent per unit, a DAS-capable RPC, and one scan of the issuer's assets per check (cached 15 s).
+Seals are the first thing to cut under time pressure. Revoking a unit (burning its seal) is not built; a burnt asset
+simply stops being found.
 
 ### 10. One pin: `@solana/kit` 5.5.x
 
@@ -184,7 +190,11 @@ Working on devnet end to end:
 - **Measured:** 20 sequential `/api/verify` calls with a cold cache took a median of 595 ms and a p95 of 718 ms
   on devnet (production build, local machine). A repeated link is answered from the 15 s cache in about 20 ms.
 
-Not built yet: unit seals (`/api/seal/...`), batch withdrawal.
+- **Unit seals:** `cph units:init` creates the issuer's tree and `cph units:seal` seals up to 50 serials per call, safe to
+  re-run. The verdict checks the serial when the link has one. 20 sequential unit checks took a median of 591 ms and a p95
+  of 688 ms.
+
+Not built yet: batch withdrawal, unit revocation, and a manager screen for seals.
 
 ## Run it
 
@@ -206,6 +216,9 @@ pnpm --filter @certapharm/cli cph issuer:onboard --as labX
 pnpm --filter @certapharm/cli cph batch:register --as labX --gtin 2001234567893 --lot L2026A \
   --expiry 2027-12-31 --product "Demo Amoxicilina 500 mg" --dosage "500 mg"
 pnpm --filter @certapharm/cli cph custody:record --as labX --gtin 2001234567893 --lot L2026A --type SHIPPED
+# optional: seal each box of the lot (commit config/seal-trees.json afterwards)
+pnpm --filter @certapharm/cli cph units:init --as labX
+pnpm --filter @certapharm/cli cph units:seal --as labX --gtin 2001234567893 --lot L2026A --serials 0001-0010
 ```
 
 Or build the whole demo world (one authentic batch, one recalled, one unknown) and check it:

@@ -17,6 +17,6 @@ export default {
   reactStrictMode: true,
   outputFileTracingRoot: root,
   // Solana SDKs stay as plain Node modules on the server; they are never bundled for the browser.
-  serverExternalPackages: ["@solana/kit", "sas-lib", "@certapharm/runtime", "@certapharm/infra-solana"],
+  serverExternalPackages: ["@solana/kit", "sas-lib", "@certapharm/runtime", "@certapharm/infra-solana", "@metaplex-foundation/umi", "@metaplex-foundation/umi-bundle-defaults", "@metaplex-foundation/mpl-bubblegum", "@metaplex-foundation/digital-asset-standard-api"],
   poweredByHeader: false,
 };

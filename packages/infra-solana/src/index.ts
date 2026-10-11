@@ -6,3 +6,5 @@ export * from "./sas/accreditation.js";
 export * from "./sas/issuer.js";
 export * from "./sas/alerts.js";
 export * from "./memo/ledger.js";
+export * from "./bubblegum/trees.js";
+export * from "./bubblegum/seals.js";

@@ -67,7 +67,7 @@ export function toApiResponse(l: LoadedReport): VerifyResponse {
       signature: e.signature,
       explorerUrl: l.explorerTx(e.signature),
     })),
-    ...(l.query.serial ? { unit: { serial: l.query.serial, seal: "NOT_CHECKED" as const } } : {}),
+    ...(r.unit ? { unit: { serial: r.unit.serial, seal: r.unit.seal, ...(r.unit.assetId ? { assetId: r.unit.assetId } : {}) } } : {}),
     checkedAt: new Date(l.checkedAt * 1000).toISOString(),
     cluster: l.cluster,
   };

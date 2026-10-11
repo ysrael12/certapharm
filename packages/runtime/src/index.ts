@@ -2,12 +2,12 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { createKeyPairSignerFromBytes, type KeyPairSigner } from "@solana/kit";
 import {
-  AccreditParticipant, BootstrapPlatform, InMemoryEventBus, ListDirectory, OnboardIssuer, RaiseAlert, RecordCustodyEvent, RegisterBatch, RevokeParticipant,
+  AccreditParticipant, BootstrapPlatform, InMemoryEventBus, ListDirectory, OnboardIssuer, RaiseAlert, RecordCustodyEvent, RegisterBatch, RevokeParticipant, SealUnits,
   VerifyProduct, type SignerRef,
 } from "@certapharm/application";
 import type { Clock, WalletAddress } from "@certapharm/domain";
 import {
-  Keyring, KitBatchKeyDeriver, MemoCustodyLedger, SasAccreditationRegistry, SasAlertRegistry, SasCertificateRegistry, SasIssuerOnboarding,
+  BubblegumSeals, Keyring, KitBatchKeyDeriver, SealTreeRegistry, MemoCustodyLedger, SasAccreditationRegistry, SasAlertRegistry, SasCertificateRegistry, SasIssuerOnboarding,
   SasPlatformSetup, TxSender, loadKeyFile, loadOrCreateKeyFile, makeConnection,
 } from "@certapharm/infra-solana";
 
@@ -38,12 +38,17 @@ function loadDotenv(): void {
 /** A signer that only carries an address. Used by public reads, which never sign. */
 const addressOnly = (address: string): KeyPairSigner => ({ address }) as unknown as KeyPairSigner;
 
-async function platformSigner(): Promise<KeyPairSigner> {
+/** Secret key bytes of the platform: PLATFORM_SECRET (JSON array) or .keys/platform.json. */
+function platformSecret(): Uint8Array {
   const secret = process.env.PLATFORM_SECRET;
-  if (secret) return createKeyPairSignerFromBytes(Uint8Array.from(JSON.parse(secret) as number[]));
+  if (secret) return Uint8Array.from(JSON.parse(secret) as number[]);
   const file = resolve(KEYS_DIR, "platform.json");
   if (!existsSync(file)) throw new Error(`Platform key not found at ${file}. Run \`cph keys:new platform\` and fund it, or set PLATFORM_SECRET.`);
-  return loadKeyFile(file);
+  return Uint8Array.from(JSON.parse(readFileSync(file, "utf8")) as number[]);
+}
+
+async function platformSigner(): Promise<KeyPairSigner> {
+  return createKeyPairSignerFromBytes(platformSecret());
 }
 
 export interface BuildOptions {
@@ -75,6 +80,10 @@ export async function buildContainer(options: BuildOptions) {
   const bus = new InMemoryEventBus();
   const keys = new KitBatchKeyDeriver();
 
+  /** Secret keys of every signer loaded in write mode. Only the seal adapter reads them: Umi needs raw bytes and kit signers do not expose them. */
+  const secrets = new Map<string, Uint8Array>();
+  if (options.mode === "write") secrets.set(authority, platformSecret());
+
   const accreditation = new SasAccreditationRegistry(conn.rpc, sender, platform, clock);
   const onboarding = new SasIssuerOnboarding(conn.rpc, sender, keyring);
   const certificates = new SasCertificateRegistry(conn.rpc, sender, keyring, clock);
@@ -85,7 +94,9 @@ export async function buildContainer(options: BuildOptions) {
   async function resolveWallet(nameOrAddress: string): Promise<WalletAddress> {
     if (ADDRESS.test(nameOrAddress)) return nameOrAddress as WalletAddress;
     if (options.mode === "read") throw new Error("Key names are not available in read mode");
-    const signer = await loadOrCreateKeyFile(resolve(KEYS_DIR, `${nameOrAddress}.json`));
+    const file = resolve(KEYS_DIR, `${nameOrAddress}.json`);
+    const signer = await loadOrCreateKeyFile(file);
+    secrets.set(signer.address, Uint8Array.from(JSON.parse(readFileSync(file, "utf8")) as number[]));
     keyring.add(signer);
     return signer.address as string as WalletAddress;
   }
@@ -106,6 +117,17 @@ export async function buildContainer(options: BuildOptions) {
     return out;
   }
 
+  const sealsOn = process.env.SEALS_ENABLED !== "false";
+  const trees = new SealTreeRegistry(resolve(ROOT, "config", "seal-trees.json"), process.env.SEAL_TREES);
+  const seals = new BubblegumSeals({
+    rpcUrl, publicBaseUrl, trees, payer: authority, explorerTx: (sig) => conn.explorerUrl(sig),
+    secretOf: (address) => {
+      const secret = secrets.get(address);
+      if (!secret) throw new Error(`No secret key loaded for ${address}`);
+      return secret;
+    },
+  });
+
   return {
     mode: options.mode, authority, cluster, publicBaseUrl, bus, keys, resolveWallet, signerRef, knownKeyNames,
     explorerTx: (sig: string) => conn.explorerUrl(sig),
@@ -115,7 +137,11 @@ export async function buildContainer(options: BuildOptions) {
     onboardIssuer: new OnboardIssuer(accreditation, onboarding),
     registerBatch: new RegisterBatch(accreditation, certificates, keys, clock, bus, publicBaseUrl),
     recordCustodyEvent: new RecordCustodyEvent(accreditation, certificates, custody, keys, clock, bus),
-    verifyProduct: new VerifyProduct(accreditation, certificates, custody, alerts, keys, clock),
+    verifyProduct: new VerifyProduct(accreditation, certificates, custody, alerts, keys, clock, sealsOn ? seals : undefined),
+    sealUnits: new SealUnits(accreditation, certificates, seals, seals, keys, clock),
+    sealsEnabled: sealsOn,
+    sealReader: seals,
+    sealMinter: seals,
     raiseAlert: new RaiseAlert(alerts, keys, authority, clock),
     revokeParticipant: new RevokeParticipant(accreditation, authority),
     directory: new ListDirectory(accreditation, certificates, alerts, keys),

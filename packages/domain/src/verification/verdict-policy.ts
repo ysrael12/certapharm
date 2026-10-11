@@ -38,6 +38,8 @@ export interface VerificationSnapshot {
   /** Seal phase on (UC7 shipped) or off. */
   readonly sealsEnabled: boolean;
   readonly seal: SealLookup;
+  /** Asset id of the seal when one was found. */
+  readonly sealAssetId?: string;
   readonly now: Instant;
 }
 
@@ -53,6 +55,8 @@ export interface VerificationReport {
     readonly certificate?: string;
   };
   readonly alert?: VerificationSnapshot["alert"];
+  /** Present when the query named a serial number. */
+  readonly unit?: { readonly serial: string; readonly seal: SealLookup; readonly assetId?: string };
   /** Accredited events only. */
   readonly trail: CustodyEvent[];
 }
@@ -64,9 +68,10 @@ const ALERT_LABEL: Record<AlertLevel, string> = {
   REGULATOR_NOTICE: "Regulator notice",
 };
 
-const notRecognized = (code: string, message: string): VerificationReport => ({
+const notRecognized = (code: string, message: string, unit?: VerificationReport["unit"]): VerificationReport => ({
   verdict: "NOT_RECOGNIZED",
   findings: [{ code, severity: "critical", message }],
+  ...(unit ? { unit } : {}),
   trail: [],
 });
 
@@ -77,8 +82,8 @@ export function evaluateVerdict(s: VerificationSnapshot): VerificationReport {
   const issuerOk = c.issuerRole === "MANUFACTURER" || c.issuerRole === "IMPORTER";
   if (!issuerOk) return notRecognized("ISSUER_NOT_ACCREDITED", "The issuer is not accredited by the Platform Authority"); // R2
   if (s.query.serial !== undefined && s.sealsEnabled) {
-    if (s.seal === "NOT_FOUND") return notRecognized("UNIT_NOT_SEALED", "This unit has no seal"); // R3
-    if (s.seal === "REVOKED") return notRecognized("UNIT_REVOKED", "The seal of this unit was revoked"); // R4
+    if (s.seal === "NOT_FOUND") return notRecognized("UNIT_NOT_SEALED", "This unit has no seal", { serial: s.query.serial, seal: "NOT_FOUND" }); // R3
+    if (s.seal === "REVOKED") return notRecognized("UNIT_REVOKED", "The seal of this unit was revoked", { serial: s.query.serial, seal: "REVOKED", ...(s.sealAssetId ? { assetId: s.sealAssetId } : {}) }); // R4
   }
 
   const findings: Finding[] = [];
@@ -104,6 +109,7 @@ export function evaluateVerdict(s: VerificationSnapshot): VerificationReport {
       ...(c.attestation ? { certificate: c.attestation } : {}),
     },
     ...(s.alert ? { alert: s.alert } : {}),
+    ...(s.query.serial !== undefined ? { unit: { serial: s.query.serial, seal: s.sealsEnabled ? s.seal : "NOT_CHECKED", ...(s.sealAssetId ? { assetId: s.sealAssetId } : {}) } } : {}),
     trail: assessed.trail,
   };
 }

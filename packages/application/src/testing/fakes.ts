@@ -4,7 +4,7 @@ import type {
 import { InMemoryEventBus } from "../events.js";
 import type {
   AccreditationRegistry, AlertRegistry, BatchKeyDeriver, CertificateRecord, CertificateRegistry, CustodyLedger,
-  IssuerCredential, IssuerOnboarding, PlatformAddresses, PlatformSetup, RawCustodyEvent, SignerRef, TxRef,
+  IssuerCredential, IssuerOnboarding, PlatformAddresses, PlatformSetup, RawCustodyEvent, SealFound, SealMinter, SealReader, SignerRef, TxRef,
 } from "../ports/index.js";
 
 /** One in-memory "chain" shared by all fakes, so tests run offline. `txCount` counts every write. */
@@ -16,6 +16,8 @@ export class FakeChain {
   readonly trails = new Map<BatchKey, RawCustodyEvent[]>();
   readonly alerts = new Map<BatchKey, BatchAlert>();
   readonly issuerCredentials = new Set<WalletAddress>();
+  readonly trees = new Set<WalletAddress>();
+  readonly seals = new Map<string, string>();
   platformCreated = false;
 
   tx(): TxRef {
@@ -134,6 +136,25 @@ export class FakeAlertRegistry implements AlertRegistry {
   }
 }
 
+/** Seals live in the chain's `seals` set, keyed by issuer and unit, so the fake minter and reader agree. */
+export class FakeSeals implements SealMinter, SealReader {
+  constructor(private readonly chain: FakeChain) {}
+  async ensureTree(issuer: SignerRef) {
+    const created = !this.chain.trees.has(issuer.address);
+    this.chain.trees.add(issuer.address);
+    return { tree: `tree:${issuer.address}`, created };
+  }
+  async seal(issuer: SignerRef, u: Parameters<SealMinter["seal"]>[1]) {
+    const id = `asset:${u.gtin}:${u.lot}:${u.serial}`;
+    this.chain.seals.set(`${issuer.address}|${u.gtin}|${u.lot}|${u.serial}`, id);
+    return { ...this.chain.tx(), assetId: id, leafIndex: this.chain.seals.size - 1 };
+  }
+  async find(issuer: WalletAddress, u: Parameters<SealReader["find"]>[1]): Promise<SealFound> {
+    const id = this.chain.seals.get(`${issuer}|${u.gtin}|${u.lot}|${u.serial}`);
+    return id ? { status: "SEALED", assetId: id } : { status: "NOT_FOUND" };
+  }
+}
+
 export function makeWorld() {
   const chain = new FakeChain();
   return {
@@ -147,5 +168,6 @@ export function makeWorld() {
     certificates: new FakeCertificateRegistry(chain),
     custody: new FakeCustodyLedger(chain),
     alerts: new FakeAlertRegistry(chain),
+    seals: new FakeSeals(chain),
   };
 }

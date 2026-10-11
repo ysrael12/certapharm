@@ -26,6 +26,8 @@ function command(name: string, description: string, configure: (c: Command) => C
       c.bus.subscribe("BatchCertified", (e) => console.log(`  tx ${e.explorerUrl}`));
       c.bus.subscribe("CustodyEventRecorded", (e) => console.log(`  tx ${e.explorerUrl}`));
       await run(c, opts, arg);
+      // The seal adapter (Umi) keeps sockets open, so end the process once the command is done.
+      process.exit(process.exitCode ?? 0);
     } catch (e) {
       fail({ code: "CLI_FAILURE", message: e instanceof Error ? e.message : String(e) });
     }
@@ -92,6 +94,7 @@ function printReport(link: string, r: import("@certapharm/domain").VerificationR
   if (r.batch) console.log(`  ${r.batch.productName} ${r.batch.dosage} · issuer ${r.batch.issuer.displayName ?? r.batch.issuer.wallet}`);
   for (const f of r.findings) console.log(`  [${f.severity}] ${f.code}: ${f.message}`);
   if (r.alert) console.log(`  alert ${r.alert.level} ${r.alert.reasonCode}: ${r.alert.publicNote}`);
+  if (r.unit) console.log(`  unit ${r.unit.serial}: seal ${r.unit.seal}${r.unit.assetId ? ` (asset ${r.unit.assetId})` : ""}`);
   for (const e of r.trail) console.log(`  ${new Date(e.occurredAt * 1000).toISOString()} ${e.type.padEnd(9)} ${e.actorName ?? e.actor} (${e.actorRole})${e.temperatureC !== undefined ? ` ${e.temperatureC} °C` : ""}`);
 }
 
@@ -100,6 +103,35 @@ command("verify <link>", "UC6 verify a GS1 Digital Link (public, read-only)", (c
   const report = unwrap(await c.verifyProduct.execute({ link }));
   printReport(link, report);
   console.log(`  (${Date.now() - started} ms)`);
+});
+
+/** `0001-0010` (keeps the zero padding) or `A1,B2,C3`. */
+function parseSerials(spec: string): string[] {
+  const range = /^(\D*)(\d+)-(\1)?(\d+)$/.exec(spec.trim());
+  if (!range) return spec.split(",").map((s) => s.trim()).filter(Boolean);
+  const [, prefix = "", from = "", , to = ""] = range;
+  const width = from.length;
+  const out: string[] = [];
+  for (let n = Number(from); n <= Number(to); n++) out.push(`${prefix}${String(n).padStart(width, "0")}`);
+  return out;
+}
+
+command("units:init", "UC7 create the issuer's seal tree (once per issuer)", (c) => c
+  .requiredOption("--as <key>", "issuer key name in .keys/"), async (c, o) => {
+  const { tree, created } = await c.sealMinter.ensureTree(await c.signerRef(o.as!));
+  console.log(`${created ? "created" : "already exists"} seal tree ${tree}\n  saved in config/seal-trees.json (commit it: tree addresses are public)`);
+});
+
+command("units:seal", "UC7 seal the units of a certified batch (up to 50 per call)", (c) => c
+  .requiredOption("--as <key>", "issuer key name in .keys/")
+  .requiredOption("--gtin <gtin>").requiredOption("--lot <lot>")
+  .requiredOption("--serials <spec>", "0001-0010 or A1,B2,C3"), async (c, o) => {
+  const r = unwrap(await c.sealUnits.execute({ issuer: await c.signerRef(o.as!), gtin: o.gtin!, lot: o.lot!, serials: parseSerials(o.serials!) }));
+  for (const u of r.sealed) console.log(`  sealed ${u.serial}  asset ${u.assetId}\n    tx ${u.explorerUrl}`);
+  if (r.skipped.length) console.log(`  already sealed: ${r.skipped.join(", ")}`);
+  for (const f of r.failed) console.error(`  failed ${f.serial}: [${f.code}] ${f.message}`);
+  console.log(`${r.sealed.length} sealed, ${r.skipped.length} skipped, ${r.failed.length} failed (tree ${r.tree})`);
+  if (r.failed.length) process.exitCode = 1;
 });
 
 command("alert:raise", "UC8 raise or replace a batch alert (Platform Authority)", (c) => c
@@ -166,6 +198,9 @@ command("demo:seed", "UC10 build the demo world: batch A authentic, B recalled, 
 
   console.log("\nLinks:");
   for (const lot of [lotA, lotB, lotC]) console.log(`  ${c.publicBaseUrl}/01/02001234567893/10/${lot}`);
+  console.log(`\nUnit seals, after "cph units:init --as labX" and "cph units:seal --as labX --gtin ${GTIN} --lot ${lotA} --serials 0001-0010":`);
+  console.log(`  ${c.publicBaseUrl}/01/02001234567893/10/${lotA}/21/0001   sealed`);
+  console.log(`  ${c.publicBaseUrl}/01/02001234567893/10/${lotA}/21/9999   never sealed`);
 });
 
 await program.parseAsync();

@@ -10,3 +10,4 @@ export * from "./use-cases/verify-product.js";
 export * from "./use-cases/raise-alert.js";
 export * from "./use-cases/list-directory.js";
 export * from "./use-cases/revoke-participant.js";
+export * from "./use-cases/seal-units.js";

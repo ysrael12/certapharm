@@ -11,6 +11,10 @@
   "dependencies": {
     "@certapharm/application": "workspace:*",
     "@certapharm/domain": "workspace:*",
+    "@metaplex-foundation/digital-asset-standard-api": "^2.1.1",
+    "@metaplex-foundation/mpl-bubblegum": "6.0.0",
+    "@metaplex-foundation/umi": "^1.6.0",
+    "@metaplex-foundation/umi-bundle-defaults": "^1.6.0",
     "@solana/kit": "5.5.1",
     "sas-lib": "1.0.10"
   }
