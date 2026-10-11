@@ -122,6 +122,24 @@ more and need a DAS-capable RPC, so they are the first thing to cut if time runs
 **Why:** `sas-lib` and the kit programs move on different schedules, and a mismatch broke the system program
 package during the spikes. One pinned version keeps every package on the same types.
 
+### 11. The public site never holds a key; the manager does, behind a token
+
+**Chosen:** `apps/web` has two halves. The public half (verdict pages, `/audit`, `/api/verify`) is read-only and
+starts with only `RPC_URL` and the Platform Authority's public address. The manager half (`/manager`) can
+accredit, certify, record custody events and raise alerts, and it signs with demo keys held on the server.
+It stays switched off until `MANAGER_TOKEN` is set, every action re-checks the session, and revoking or clearing
+asks for a second click.
+**Why:** the demo has to show the whole loop in a browser, and a wallet adapter for five demo actors would cost
+more time than it adds. The manager calls the same use cases as the CLI, so the rules are written once.
+**Cost:** server-held keys are acceptable on devnet and wrong for production. There the manager would sign in the
+browser with each company's own wallet, and only the fee payer would stay on the server.
+
+### 12. One composition root for both apps
+
+**Chosen:** `packages/runtime` wires the adapters into use cases, in a `read` mode (no secret key) and a `write`
+mode. The CLI and the web app both build their container from it.
+**Why:** two copies of the wiring drift. A single one keeps the verdict identical in the terminal and in the browser.
+
 ## Architecture at a glance
 
 | Concern | Used |
@@ -135,8 +153,9 @@ package during the spikes. One pinned version keeps every package on the same ty
 packages/domain         pure TypeScript: GS1 value objects, aggregates, VerdictPolicy
 packages/application    use cases and ports
 packages/infra-solana   SAS, Memo and BatchKey adapters
-apps/cli                `cph`, the only place that writes or holds keys
-apps/web                Next.js, read-only (verification page and API)
+packages/runtime        composition root: adapters wired into use cases, read or write mode
+apps/cli                `cph`, operator commands
+apps/web                Next.js: public verification (read-only) and the manager (signs with server-held demo keys)
 ```
 
 Domain model and batch lifecycle:
@@ -149,9 +168,18 @@ The full specification is in `certapharm-specs/specs/`, and the PlantUML sources
 
 ## Current state
 
-Working on devnet from the CLI: platform bootstrap, accreditation, issuer onboarding, batch certification,
-custody events, alerts, `cph verify` (all three verdicts, about one second per check) and `cph demo:seed`.
-The remaining piece is the public web verification page. Spike results with transaction links are in `apps/cli/SPIKES.md`.
+Working on devnet end to end:
+
+- **CLI:** platform bootstrap, accreditation, issuer onboarding, batch certification, custody events, alerts,
+  `cph verify` and `cph demo:seed`. Spike results with transaction links are in `apps/cli/SPIKES.md`.
+- **Public site:** `/` (scan or type a code), `/scan` (camera, QR and DataMatrix), the GS1 verdict pages for a
+  batch and for a unit, `/audit/[batchKey]` and `/api/verify`. English by default, Portuguese with `?lang=pt`.
+- **Manager:** overview, participants, batches (with a QR PNG per lot), custody and alerts, all reading and
+  writing the chain.
+- **Measured:** 20 sequential `/api/verify` calls with a cold cache took a median of 595 ms and a p95 of 718 ms
+  on devnet (production build, local machine). A repeated link is answered from the 15 s cache in about 20 ms.
+
+Not built yet: unit seals (`/api/seal/...`), batch withdrawal.
 
 ## Run it
 
@@ -182,6 +210,17 @@ pnpm --filter @certapharm/cli cph demo:seed
 pnpm --filter @certapharm/cli cph verify https://certapharm.vercel.app/01/02001234567893/10/L2026A
 ```
 
+Then open the site:
+
+```sh
+# .env needs RPC_URL, PLATFORM_AUTHORITY (public key) and, for /manager, MANAGER_TOKEN (a long random string)
+pnpm --filter @certapharm/web dev          # http://localhost:3000
+```
+
+Public pages: `/`, `/scan`, `/01/02001234567893/10/L2026E` and `/api/verify?link=/01/02001234567893/10/L2026E`.
+The manager is at `/manager` and signs in with `MANAGER_TOKEN`. It reads actor keys from `./.keys/`, so run
+`cph demo:seed` once to create them.
+
 All demo GTINs and names are fictitious. The `200` GTIN prefix is reserved by GS1 for restricted circulation, so
 it cannot collide with a real product.
 
@@ -191,6 +230,8 @@ it cannot collide with a real product.
   its own batches.
 - Custody rules are enforced when writing and reported as findings when reading. They are not enforced on-chain.
 - The Platform Authority is a single key on devnet. Production would use a multisig.
+- `/api/verify` allows 30 requests per minute per IP and the public site never loads a secret key. The manager is off
+  without `MANAGER_TOKEN`, and it signs with keys on the server, which is a devnet shortcut (decision 11).
 - Revoking an accreditation closes its attestation, so the verifier cannot yet tell a revoked issuer from an
   unknown one. This is a known gap.
 

@@ -1,0 +1,214 @@
+<title>Certapharm · Public proof</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Hallmark · audit pass: tokens locked, 4px scale, no side stripes · critique: P4 H5 E4 S4 R5 V3 · genre: modern-minimal (brand palette fixed) */
+/* Layout: one phone-width column (max 480px) centered on wider screens. Verdict band first, then product, issuer, trail, proof link. */
+:root {
+  --cph-ink: #003049; --cph-paper: #fdf0d5; --cph-ok: #669bbc; --cph-warn: #e0a100;
+  --cph-bad: #c1121f; --cph-bad-deep: #780000; --cph-muted: #3d5a6c;
+  --bg: #fdf0d5; --surface: #fff8e8; --text: #003049; --muted: #3d5a6c; --line: #d9c9a6;
+  --link: #003049; --focus: #003049; --on-ink: #fdf0d5; --ink-bg: #003049;
+  --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+  --gutter: 16px; --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --info-bg: #dcebf4; --info-fg: #003049; --warn-bg: #fbefcf; --warn-fg: #003049; --warn-ic: #9a6e00; --scan-bg: #00141f; --card-line: rgba(0,48,73,.08); --card-shadow: rgba(0,48,73,.06);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { color-scheme: dark; --bg: #00202f; --surface: #002a3f; --text: #fdf0d5; --muted: #9db8c8; --line: #174a63; --link: #669bbc; --focus: #669bbc; --on-ink: #fdf0d5; --ink-bg: #002a3f; }
+}
+:root[data-theme="dark"] { color-scheme: dark; --bg: #00202f; --surface: #002a3f; --text: #fdf0d5; --muted: #9db8c8; --line: #174a63; --link: #669bbc; --focus: #669bbc; --on-ink: #fdf0d5; --ink-bg: #002a3f; }
+* { box-sizing: border-box; }
+html, body { overflow-x: clip; }
+html[lang="pt-BR"] [lang="en"], html[lang="en"] [lang="pt-BR"] { display: none; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 400 16px/1.55 var(--font-body); }
+.app { max-width: 480px; min-height: 100dvh; margin-inline: auto; display: flex; flex-direction: column; background: var(--bg); }
+@media (min-width: 520px) { .app { border-inline: 1px solid var(--line); } }
+h1, h2, h3 { font-family: var(--font-display); margin: 0; line-height: 1.12; text-wrap: balance; }
+p { margin: 0; }
+a { color: var(--link); }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.ic { width: 22px; height: 22px; flex: none; }
+.mono { font-family: var(--font-mono); font-size: 13px; }
+.muted { color: var(--muted); }
+.eyebrow { font: 500 12px/1 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+
+/* top bar */
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px var(--gutter); background: var(--ink-bg); color: var(--on-ink); min-height: 52px; }
+.brand { white-space: nowrap; display: flex; align-items: center; gap: 8px; font: 700 18px/1 var(--font-display); letter-spacing: -.01em; color: inherit; text-decoration: none; }
+.brand .ic { width: 24px; height: 24px; color: var(--cph-ok); }
+.lang { display: flex; border: 1px solid var(--cph-ok); }
+.lang a { min-width: 44px; min-height: 36px; display: grid; place-items: center; font: 500 12px/1 var(--font-mono); color: var(--on-ink); text-decoration: none; letter-spacing: .06em; }
+.lang a[aria-current="true"] { background: var(--cph-ok); color: var(--cph-ink); }
+
+/* verdict band */
+.band { padding: 24px var(--gutter) 24px; display: flex; flex-direction: column; gap: 8px; }
+.band .ic { width: 40px; height: 40px; }
+.band h1 { font-size: 30px; font-weight: 700; letter-spacing: -.015em; }
+.band p { font-size: 16px; max-width: 34ch; }
+.band .code { font: 500 13px/1.4 var(--font-mono); padding-top: 4px; }
+.band.ok { background: var(--cph-ok); color: var(--cph-ink); }
+.band.warn { background: var(--cph-warn); color: var(--cph-ink); }
+.band.bad { background: var(--cph-bad); color: var(--cph-paper); }
+
+/* sections */
+.sec { padding: 16px var(--gutter); border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px; }
+.sec h2 { font-size: 13px; font-weight: 500; font-family: var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.product { font: 700 20px/1.2 var(--font-display); }
+.facts { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 16px; margin: 4px 0 0; }
+.facts dt { color: var(--muted); font-size: 13px; }
+.facts dd { margin: 0; font-variant-numeric: tabular-nums; }
+.issuer { display: flex; flex-direction: column; gap: 2px; }
+.issuer b { font: 500 16px/1.3 var(--font-display); }
+
+/* trail */
+.trail { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; }
+.trail li { display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 12px; position: relative; padding-bottom: 16px; }
+.trail li:last-child { padding-bottom: 0; }
+.trail li::before { content: ""; position: absolute; left: 15px; top: 32px; bottom: 0; width: 2px; background: var(--line); }
+.trail li:last-child::before { display: none; }
+.node { width: 32px; height: 32px; display: grid; place-items: center; border: 2px solid var(--text); background: var(--surface); }
+.node .ic { width: 18px; height: 18px; }
+.trail b { font: 500 15px/1.3 var(--font-display); display: block; }
+.trail small { color: var(--muted); font-size: 13px; display: block; font-variant-numeric: tabular-nums; }
+.temp { display: inline-block; margin-left: 6px; font: 500 12px/1.5 var(--font-mono); border: 1px solid var(--line); padding: 0 6px; color: var(--text); }
+.note { border-left: 4px solid var(--text); padding: 6px 12px; background: var(--surface); font-size: 14px; }
+
+/* actions */
+.btn { white-space: nowrap; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 18px; font: 500 16px/1 var(--font-display); text-decoration: none; border: 2px solid var(--text); cursor: pointer; background: transparent; color: var(--text); }
+.btn.primary { background: var(--ink-bg); color: var(--on-ink); border-color: var(--ink-bg); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .btn.primary { background: var(--cph-ok); color: var(--cph-ink); border-color: var(--cph-ok); } }
+:root[data-theme="dark"] .btn.primary { background: var(--cph-ok); color: var(--cph-ink); border-color: var(--cph-ok); }
+.btn.bad { background: var(--cph-bad); color: var(--cph-paper); border-color: var(--cph-bad); }
+.btn.bad:hover { background: var(--cph-bad-deep); border-color: var(--cph-bad-deep); }
+.btn:hover:not(.bad) { background: var(--text); color: var(--bg); }
+.actions { display: flex; flex-direction: column; gap: 10px; padding: 16px var(--gutter); }
+.link-row { white-space: nowrap; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 48px; padding: 0 var(--gutter); color: var(--text); text-decoration: none; font: 500 15px/1.2 var(--font-display); border-bottom: 1px solid var(--line); }
+.link-row:hover { background: var(--surface); }
+
+/* footer */
+.foot { margin-top: auto; padding: 14px var(--gutter) 20px; display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; font-size: 13px; color: var(--muted); }
+.badge { font: 500 11px/1 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; padding: 5px 7px; border: 1px solid var(--line); color: var(--muted); }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label { font: 500 14px/1.3 var(--font-display); }
+.field input { min-height: 48px; padding: 0 12px; font: 400 15px/1 var(--font-mono); background: var(--surface); color: var(--text); border: 2px solid var(--text); border-radius: 0; width: 100%; }
+.field input::placeholder { color: var(--muted); opacity: 1; }
+.btn:active { transform: none; background: var(--text); color: var(--bg); opacity: .88; }
+.btn:disabled, .btn[aria-disabled="true"] { opacity: .55; cursor: wait; }
+.sr { position: absolute; left: -9999px; }
+.field input:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.field input:disabled { opacity: .55; cursor: not-allowed; }
+.lang a:focus-visible { outline-offset: -3px; }
+/* Fiori look: 8px radius, light page ground with raised surface sections, object-status style badges, sentence-case labels */
+:root { --r: 8px; --page: #f8f1e0; --card: #fffdf7; --link: #0a5a8a; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --page: #00202f; --card: #002a3f; --link: #8fc0de; } }
+:root[data-theme="dark"] { --page: #00202f; --card: #002a3f; --link: #8fc0de; }
+body { background: var(--page); }
+.app { background: var(--page); }
+.top { min-height: 44px; padding-block: 6px; }
+.lang { border-radius: var(--r); overflow: hidden; }
+.band { border-radius: 0 0 var(--r) var(--r); }
+main { display: flex; flex-direction: column; gap: 12px; padding-bottom: 12px; }
+.sec { background: var(--card); border: 0; border-radius: var(--r); margin-inline: 12px; box-shadow: 0 0 0 1px var(--card-line), 0 2px 8px var(--card-shadow); }
+main > .band { margin-inline: 0; }
+.sec h2 { font: 600 14px/1.2 var(--font-display); letter-spacing: 0; text-transform: none; color: var(--muted); }
+.eyebrow { text-transform: none; letter-spacing: 0; font: 500 13px/1.2 var(--font-body); }
+.btn { border-radius: var(--r); border-width: 1px; }
+.field input { border-radius: var(--r); border-width: 1px; background: var(--card); }
+.node { border-radius: var(--r); background: var(--card); }
+.temp { border-radius: var(--r); border-color: transparent; background: var(--info-bg); color: var(--info-fg); }
+.note { display: flex; gap: var(--s2); align-items: flex-start; border: 0; border-radius: var(--r); background: var(--warn-bg); color: var(--warn-fg); padding: var(--s3); }
+.note .ic { color: var(--warn-ic); width: 20px; height: 20px; }
+.badge { border-radius: var(--r); background: var(--card); }
+.actions { padding-inline: 12px; }
+.link-row { background: var(--card); border-radius: var(--r); margin-inline: 12px; border-bottom: 0; box-shadow: 0 0 0 1px var(--card-line); }
+.link-row:hover { background: var(--hover, #f3ead2); }
+.foot { padding-inline: 16px; }
+
+@media (prefers-reduced-motion: no-preference) { .btn, .link-row { transition: background .15s, color .15s, opacity .15s; } }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+<div class="app">
+
+
+<header class="top">
+  <a class="brand" href="verdict-authentic.html" aria-label="Certapharm"><svg class="ic " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg><span>Certapharm</span></a>
+  <nav class="lang" aria-label="Language"><a href="?" data-l="en" lang="en">EN</a><a href="?lang=pt" data-l="pt-BR" lang="pt-BR">PT</a></nav>
+</header>
+<style>
+  .aud-h { background: var(--ink-bg); color: var(--on-ink); padding: 22px var(--gutter) 24px; display: flex; flex-direction: column; gap: 8px; }
+  .aud-h h1 { font-size: 26px; }
+  .aud-h .mono { color: var(--cph-ok); word-break: break-all; }
+  .kv { display: grid; gap: 12px; margin: 6px 0 0; }
+  .kv div { display: flex; flex-direction: column; gap: 2px; }
+  .kv dt { font-size: 12px; color: var(--muted); font-family: var(--font-mono); letter-spacing: .06em; text-transform: uppercase; }
+  .kv dd { margin: 0; word-break: break-all; }
+  .kv a { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; }
+  .ic.sm { width: 14px; height: 14px; display: inline; vertical-align: -2px; }
+  .aud { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; }
+  .aud-row { display: grid; grid-template-columns: 28px 1fr; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .aud-row:last-child { border-bottom: 0; }
+  .aud-n { color: var(--muted); }
+  .aud-b { display: flex; flex-direction: column; gap: 2px; word-break: break-all; }
+  .aud-b small { color: var(--muted); }
+  .aud-b a { min-height: 32px; display: inline-flex; align-items: center; gap: 6px; }
+  .aud-b b { font: 500 15px/1.3 var(--font-display); }
+</style>
+<main>
+  <section class="aud-h">
+    <span class="eyebrow" style="color:var(--on-ink);opacity:.8"><span lang="pt-BR">Auditoria</span><span lang="en">Audit</span></span>
+    <h1><span lang="pt-BR">A prova pública deste lote</span><span lang="en">The public proof for this lot</span></h1>
+    <span class="mono">BatchKey 7Kq3…mWx9</span>
+  </section>
+  <section class="sec" aria-labelledby="c-h">
+    <h2 id="c-h"><span lang="pt-BR">Certificado de origem</span><span lang="en">Certificate of origin</span></h2>
+    <dl class="kv">
+      <div><dt><span lang="pt-BR">Atestado SAS do lote</span><span lang="en">Batch SAS attestation</span></dt><dd class="mono"><a href="https://explorer.solana.com/address/Hq9v4GfXTd2LzEw8cNnY3RkP5aVbJ7uMsQe1ZtAoB6Kd?cluster=devnet" rel="noopener">Hq9v4G…B6Kd <svg class="ic sm " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v6H4V6h6"/></svg></a></dd></div>
+      <div><dt><span lang="pt-BR">Emissor</span><span lang="en">Issuer</span></dt><dd class="mono">Laboratório Demo · 4rT8…Lp2c</dd></div>
+      <div><dt><span lang="pt-BR">Credenciamento</span><span lang="en">Accreditation</span></dt><dd><span lang="pt-BR">MANUFACTURER, emitido pela Platform Authority</span><span lang="en">MANUFACTURER, issued by the Platform Authority</span></dd></div>
+      <div><dt><span lang="pt-BR">Alerta ativo</span><span lang="en">Active alert</span></dt><dd><span lang="pt-BR">Nenhum</span><span lang="en">None</span></dd></div>
+    </dl>
+  </section>
+  <section class="sec" aria-labelledby="t-h">
+    <h2 id="t-h"><span lang="pt-BR">Eventos de custódia (7)</span><span lang="en">Custody events (7)</span></h2>
+    <ol class="aud">
+      
+  <li class="aud-row"><span class="aud-n mono">1</span><span class="aud-b"><b>SHIPPED</b> <span class="muted">Laboratório Demo</span><small class="mono">2026-10-11T13:02:11Z</small><a class="mono" href="https://explorer.solana.com/tx/5hJ2kQvP8rWnXc1dYtLzUe9aMbFgS3oV7iNxKp4RqTjHwEy6CsAuBdZm2LfGn8?cluster=devnet" rel="noopener">5hJ2kQvP8r…2LfGn8 <svg class="ic sm " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v6H4V6h6"/></svg></a></span></li>
+      
+  <li class="aud-row"><span class="aud-n mono">2</span><span class="aud-b"><b>RECEIVED</b> <span class="muted">Transportadora Demo · 4,6 °C</span><small class="mono">2026-10-11T14:20:40Z</small><a class="mono" href="https://explorer.solana.com/tx/3Wm9RtXe5LqHy2aPvNcZb8KdUjFsGo1iTx7ApEr4CnYkBw6DhMuSl0QfJzVg9?cluster=devnet" rel="noopener">3Wm9RtXe5L…fJzVg9 <svg class="ic sm " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v6H4V6h6"/></svg></a></span></li>
+      
+  <li class="aud-row"><span class="aud-n mono">3</span><span class="aud-b"><b>SHIPPED</b> <span class="muted">Transportadora Demo</span><small class="mono">2026-10-11T14:48:02Z</small><a class="mono" href="https://explorer.solana.com/tx/2Yp6NzKd8CvTa4RbMgXe1HsLwQj9UoFi7AxEc3BnWtPkDr5GhSuLm0VfJyZq8?cluster=devnet" rel="noopener">2Yp6NzKd8C…fJyZq8 <svg class="ic sm " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v6H4V6h6"/></svg></a></span></li>
+      
+  <li class="aud-row"><span class="aud-n mono">4</span><span class="aud-b"><b>RECEIVED</b> <span class="muted">Distribuidora Demo</span><small class="mono">2026-10-11T15:40:19Z</small><a class="mono" href="https://explorer.solana.com/tx/4Bd1VxHn7QsMe9TcYgLa3KpWj6UoRi2ZfEt8AuCrNkXw5DhSyPm0LbJzGq7Vf?cluster=devnet" rel="noopener">4Bd1VxHn7Q…zGq7Vf <svg class="ic sm " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v6H4V6h6"/></svg></a></span></li>
+      
+  <li class="aud-row"><span class="aud-n mono">5</span><span class="aud-b"><b>SHIPPED</b> <span class="muted">Distribuidora Demo</span><small class="mono">2026-10-12T07:30:55Z</small><a class="mono" href="https://explorer.solana.com/tx/6Ne3CzLp9RtKa2YbXgMd5HsWj1QoUi8VfAx4EcBnTkPw7DhGyZu0SmJrLq3Vb?cluster=devnet" rel="noopener">6Ne3CzLp9R…rLq3Vb <svg class="ic sm " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v6H4V6h6"/></svg></a></span></li>
+      
+  <li class="aud-row"><span class="aud-n mono">6</span><span class="aud-b"><b>RECEIVED</b> <span class="muted">Farmácia Demo</span><small class="mono">2026-10-12T09:15:08Z</small><a class="mono" href="https://explorer.solana.com/tx/1Rk8TxMe4VsNa7ZcYgLd2HpWj9QoUi5BfAx3EnCtKwPr6DhGyZu0SmJqLb4Vf?cluster=devnet" rel="noopener">1Rk8TxMe4V…qLb4Vf <svg class="ic sm " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v6H4V6h6"/></svg></a></span></li>
+      
+  <li class="aud-row"><span class="aud-n mono">7</span><span class="aud-b"><b>DISPENSED</b> <span class="muted">Farmácia Demo</span><small class="mono">2026-10-12T16:42:31Z</small><a class="mono" href="https://explorer.solana.com/tx/7Ft2MzKd5NsRa9YcXgLe1HpWj4QoUi8VbAx6EnCtBwPr3DhGyZu0SmJqLf5Vk?cluster=devnet" rel="noopener">7Ft2MzKd5N…qLf5Vk <svg class="ic sm " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v6H4V6h6"/></svg></a></span></li>
+    </ol>
+  </section>
+  <section class="sec" aria-labelledby="r-h">
+    <h2 id="r-h"><span lang="pt-BR">Refaça a conferência</span><span lang="en">Re-check it yourself</span></h2>
+    <p class="muted"><span lang="pt-BR">Tudo acima está na rede Solana. O BatchKey sai do GTIN e do lote, e qualquer pessoa pode derivá-lo e listar as mesmas transações.</span><span lang="en">Everything above is on the Solana network. The BatchKey is derived from the GTIN and lot, so anyone can derive it and list the same transactions.</span></p>
+    <a class="btn" href="/api/verify?link=" style="margin-top:8px"><span lang="pt-BR">Ver resposta em JSON</span><span lang="en">See the JSON response</span><svg class="ic " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+  </section>
+</main>
+
+<footer class="foot">
+  <span class="badge">devnet demo</span>
+  <span><span lang="pt-BR">Verificado em</span><span lang="en">Checked at</span> <span class="mono">12/10/2026 16:44</span></span>
+</footer>
+</div>
+<script>
+(function(){
+  var q = new URLSearchParams(location.search).get("lang");
+  var l = q === "pt" ? "pt-BR" : "en";
+  document.documentElement.lang = l;
+  document.querySelectorAll(".lang a").forEach(function(a){
+    var on = a.dataset.l === l; a.setAttribute("aria-current", on ? "true" : "false");
+    a.addEventListener("click", function(e){ e.preventDefault(); var u = new URL(location.href); if (a.dataset.l === "pt-BR") u.searchParams.set("lang","pt"); else u.searchParams.delete("lang"); location.href = u.toString(); });
+  });
+})();
+</script>

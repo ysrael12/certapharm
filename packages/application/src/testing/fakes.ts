@@ -57,6 +57,9 @@ export class FakeAccreditationRegistry implements AccreditationRegistry {
   async findMany(wallets: readonly WalletAddress[]): Promise<Map<WalletAddress, Participant>> {
     return new Map(wallets.flatMap((w) => { const p = this.chain.participants.get(w); return p ? [[w, p] as const] : []; }));
   }
+  async listAll(): Promise<Participant[]> {
+    return [...this.chain.participants.values()];
+  }
   async listIssuers(): Promise<Participant[]> {
     return [...this.chain.participants.values()].filter((p) => p.role === "MANUFACTURER" || p.role === "IMPORTER");
   }
@@ -85,6 +88,9 @@ export class FakeCertificateRegistry implements CertificateRegistry {
   async withdraw(_issuer: SignerRef, key: BatchKey): Promise<TxRef> {
     this.chain.certificates.delete(key);
     return this.chain.tx();
+  }
+  async listByIssuers(issuers: readonly WalletAddress[]): Promise<CertificateRecord[]> {
+    return [...this.chain.certificates.values()].filter((c) => issuers.includes(c.issuer));
   }
   async findByBatchKey(key: BatchKey, issuers: readonly WalletAddress[]): Promise<CertificateRecord | null> {
     const c = this.chain.certificates.get(key);
@@ -122,6 +128,9 @@ export class FakeAlertRegistry implements AlertRegistry {
   }
   async find(key: BatchKey): Promise<BatchAlert | null> {
     return this.chain.alerts.get(key) ?? null;
+  }
+  async list(): Promise<BatchAlert[]> {
+    return [...this.chain.alerts.values()];
   }
 }
 

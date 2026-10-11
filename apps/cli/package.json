@@ -12,6 +12,7 @@
     "@certapharm/application": "workspace:*",
     "@certapharm/domain": "workspace:*",
     "@certapharm/infra-solana": "workspace:*",
+    "@certapharm/runtime": "workspace:*",
     "@metaplex-foundation/digital-asset-standard-api": "^2.1.1",
     "@metaplex-foundation/mpl-bubblegum": "6.0.0",
     "@metaplex-foundation/umi": "^1.6.0",

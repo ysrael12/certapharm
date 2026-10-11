@@ -33,6 +33,8 @@ export interface AccreditationRegistry {
   findMany(wallets: readonly WalletAddress[]): Promise<Map<WalletAddress, Participant>>;
   /** Active MANUFACTURER | IMPORTER participants. */
   listIssuers(): Promise<Participant[]>;
+  /** Every active participant, any role. */
+  listAll(): Promise<Participant[]>;
 }
 
 export interface IssuerCredential {
@@ -61,6 +63,8 @@ export interface CertificateRegistry {
   withdraw(issuer: SignerRef, batchKey: BatchKey): Promise<TxRef>;
   /** Looks only under the given issuers' credentials. A withdrawn certificate is null. */
   findByBatchKey(batchKey: BatchKey, issuers: readonly WalletAddress[]): Promise<CertificateRecord | null>;
+  /** Every live certificate under the given issuers' credentials. */
+  listByIssuers(issuers: readonly WalletAddress[]): Promise<CertificateRecord[]>;
 }
 
 export interface RawCustodyEvent {
@@ -88,6 +92,8 @@ export interface AlertRegistry {
   raise(a: BatchAlert): Promise<TxRef>;
   clear(batchKey: BatchKey): Promise<TxRef>;
   find(batchKey: BatchKey): Promise<BatchAlert | null>;
+  /** Every live alert. */
+  list(): Promise<BatchAlert[]>;
 }
 
 export interface BatchKeyDeriver {

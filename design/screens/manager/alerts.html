@@ -1,0 +1,178 @@
+<title>Certapharm Manager · Alerts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Hallmark · audit pass: tokens locked, 4px scale, no side stripes, one summary strip instead of tile grid · critique: P4 H4 E4 S4 R5 V3 · genre: modern-minimal (brand palette fixed) */
+/* Layout (Fiori): shell bar on top (ink, 44px), side navigation (surface), then a page with breadcrumb, title header and 8px-radius cards. Palette mapped to Fiori roles: ink = shell, steel blue = information/positive, amber = critical, red = negative. */
+:root {
+  --cph-ink:#003049; --cph-paper:#fdf0d5; --cph-ok:#669bbc; --cph-warn:#e0a100; --cph-bad:#c1121f; --cph-bad-deep:#780000; --cph-muted:#3d5a6c;
+  --bg:#f8f1e0; --surface:#fffdf7; --text:#003049; --muted:#3d5a6c; --line:#e3d6b8; --link:#0a5a8a; --focus:#003049; --shell:#003049; --on-shell:#fdf0d5; --hover:#f3ead2; --select:#e1edf5; --field:#6b8797;
+  --ok-bg:#dcebf4; --ok-fg:#003049; --ok-ic:#2b6f98; --warn-bg:#fbefcf; --warn-fg:#003049; --warn-ic:#9a6e00; --bad-bg:#fadadd; --bad-fg:#780000; --bad-ic:#c1121f;
+  --primary:#003049; --on-primary:#fdf0d5; --primary-hover:#0c4766; --nav-bar:#003049;
+  --r:8px; --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --card-line:rgba(0,48,73,.08); --shadow:0 0 0 1px var(--card-line),0 2px 8px rgba(0,48,73,.06); --shell-line:rgba(253,240,213,.3); --shell-hover:rgba(253,240,213,.1);
+  --font-display:"Space Grotesk","Segoe UI",system-ui,sans-serif; --font-body:"IBM Plex Sans","Segoe UI",system-ui,sans-serif; --font-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { color-scheme:dark; --bg:#00202f; --surface:#002a3f; --text:#fdf0d5; --muted:#9db8c8; --line:#174a63; --link:#8fc0de; --focus:#8fc0de; --shell:#001a27; --hover:#07364d; --select:#0b405c; --field:#5f8aa3; --ok-bg:#0f4560; --ok-fg:#fdf0d5; --ok-ic:#8fc0de; --warn-bg:#4a3a06; --warn-fg:#fdf0d5; --warn-ic:#f0c040; --bad-bg:#5a0d12; --bad-fg:#fdf0d5; --bad-ic:#ff8a92; --primary:#669bbc; --on-primary:#003049; --primary-hover:#8fc0de; --nav-bar:#669bbc; --shadow:0 0 0 1px rgba(253,240,213,.1); } }
+:root[data-theme="dark"] { color-scheme:dark; --bg:#00202f; --surface:#002a3f; --text:#fdf0d5; --muted:#9db8c8; --line:#174a63; --link:#8fc0de; --focus:#8fc0de; --shell:#001a27; --hover:#07364d; --select:#0b405c; --field:#5f8aa3; --ok-bg:#0f4560; --ok-fg:#fdf0d5; --ok-ic:#8fc0de; --warn-bg:#4a3a06; --warn-fg:#fdf0d5; --warn-ic:#f0c040; --bad-bg:#5a0d12; --bad-fg:#fdf0d5; --bad-ic:#ff8a92; --primary:#669bbc; --on-primary:#003049; --primary-hover:#8fc0de; --nav-bar:#669bbc; --shadow:0 0 0 1px rgba(253,240,213,.1); }
+* { box-sizing:border-box; }
+html, body { overflow-x:clip; }
+body { margin:0; background:var(--bg); color:var(--text); font:400 14px/1.5 var(--font-body); }
+h1,h2,h3 { font-family:var(--font-display); margin:0; line-height:1.2; text-wrap:balance; }
+p { margin:0; } a { color:var(--link); }
+:focus-visible { outline:2px solid var(--focus); outline-offset:2px; border-radius:4px; }
+.ic { width:16px; height:16px; flex:none; }
+.mono { font-family:var(--font-mono); font-size:12.5px; }
+.muted { color:var(--muted); }
+.sr { position:absolute; left:-9999px; }
+
+.shellbar { position:sticky; top:env(safe-area-inset-top,0px); z-index:5; height:44px; background:var(--shell); color:var(--on-shell); display:flex; align-items:center; gap:12px; padding:0 16px; }
+.shellbar .brand { white-space:nowrap; }
+.shellbar .brand { display:flex; align-items:center; gap:8px; font:700 16px/1 var(--font-display); }
+.shellbar .brand .ic { width:22px; height:22px; color:var(--cph-ok); }
+.shellbar .sep { width:1px; height:20px; background:var(--shell-line); }
+.shellbar .app { font:500 14px/1 var(--font-body); opacity:.9; }
+.shellbar .sp { flex:1; }
+.env { font:500 11px/1 var(--font-mono); padding:5px 8px; border-radius:var(--r); border:1px solid var(--cph-ok); color:var(--cph-ok); }
+.avatar { width:30px; height:30px; border-radius:50%; background:var(--cph-ok); color:var(--cph-ink); display:grid; place-items:center; font:700 12px/1 var(--font-display); }
+.layout { display:grid; grid-template-columns:240px minmax(0,1fr); min-height:calc(100dvh - 44px); }
+@media (max-width:860px) { .layout { grid-template-columns:1fr; } .shellbar .app,.shellbar .sep { display:none; } }
+
+.side { background:var(--surface); border-right:1px solid var(--line); padding:12px 8px; display:flex; flex-direction:column; gap:12px; position:sticky; top:44px; height:calc(100dvh - 44px); }
+@media (max-width:860px) { .side { position:static; height:auto; border-right:0; border-bottom:1px solid var(--line); padding:6px 8px; } }
+.side nav { display:flex; flex-direction:column; gap:2px; }
+@media (max-width:860px) { .side nav { flex-direction:row; flex-wrap:wrap; } }
+.side nav a { white-space:nowrap; display:flex; align-items:center; gap:8px; min-height:40px; padding:0 12px; color:var(--text); text-decoration:none; font:500 14px/1 var(--font-body); border-radius:var(--r); }
+.side nav a:hover { background:var(--hover); }
+.side nav a[aria-current="page"] { background:var(--select); font-weight:600; }
+.side nav a[aria-current="page"] .ic { color:var(--link); }
+.side .who { margin-top:auto; padding:12px; border-top:1px solid var(--line); font-size:12px; display:flex; flex-direction:column; gap:2px; }
+@media (max-width:860px) { .side .who { display:none; } }
+
+main { padding:16px 32px 56px; max-width:1180px; width:100%; display:flex; flex-direction:column; gap:16px; }
+@media (max-width:560px) { main { padding:12px 16px 40px; } }
+.crumbs { font-size:12px; color:var(--muted); display:flex; gap:6px; }
+.crumbs a { color:var(--link); text-decoration:none; } .crumbs a:hover { text-decoration:underline; }
+.head { display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:12px; }
+.head h1 { font-size:26px; font-weight:700; letter-spacing:-.01em; }
+.head p { color:var(--muted); margin-top:4px; max-width:64ch; }
+.grid2 { display:grid; grid-template-columns:minmax(0,380px) minmax(0,1fr); gap:16px; align-items:start; }
+.grid2.wide { grid-template-columns:minmax(0,1fr) minmax(0,360px); }
+@media (max-width:980px) { .grid2, .grid2.wide { grid-template-columns:1fr; } }
+.stack { display:flex; flex-direction:column; gap:16px; min-width:0; }
+.panel { border-radius:var(--r); background:var(--surface); box-shadow:var(--shadow); display:flex; flex-direction:column; overflow:hidden; }
+.panel > h2 { font:600 16px/1.2 var(--font-display); padding:8px 16px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center; gap:8px; min-height:52px; }
+.panel .body { padding:16px; display:flex; flex-direction:column; gap:16px; }
+.stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); border-radius:var(--r); background:var(--surface); box-shadow:var(--shadow); overflow:hidden; }
+.stat { padding:16px; border-right:1px solid var(--line); border-bottom:1px solid var(--line); margin:0 -1px -1px 0; display:flex; flex-direction:column; gap:4px; }
+.stat span { font:500 13px/1.2 var(--font-body); color:var(--muted); }
+.stat b { font:600 24px/1.2 var(--font-display); font-variant-numeric:tabular-nums; }
+.stat small { color:var(--muted); font-size:12px; }
+
+.scroll { overflow-x:auto; }
+table { border-collapse:collapse; width:100%; min-width:560px; }
+th,td { text-align:left; padding:0 16px; height:44px; border-bottom:1px solid var(--line); vertical-align:middle; }
+th { font:600 12px/1 var(--font-body); color:var(--muted); background:var(--surface); white-space:nowrap; }
+tr:last-child td { border-bottom:0; }
+td b { font:500 14px/1.3 var(--font-body); }
+td small { display:block; color:var(--muted); font-size:12px; line-height:1.2; }
+.num { font-variant-numeric:tabular-nums; }
+tbody tr:hover { background:var(--hover); }
+
+.chip { display:inline-flex; align-items:center; gap:4px; font:500 12px/1 var(--font-body); padding:4px 8px; border-radius:var(--r); white-space:nowrap; }
+.chip .ic { width:12px; height:12px; }
+.chip.ok { background:var(--ok-bg); color:var(--ok-fg); } .chip.ok .ic { color:var(--ok-ic); }
+.chip.warn { background:var(--warn-bg); color:var(--warn-fg); } .chip.warn .ic { color:var(--warn-ic); }
+.chip.bad { background:var(--bad-bg); color:var(--bad-fg); } .chip.bad .ic { color:var(--bad-ic); }
+.chip.off { background:var(--hover); color:var(--muted); }
+
+.field { display:flex; flex-direction:column; gap:4px; border:0; padding:0; margin:0; min-width:0; }
+.field label, .field legend { font:600 13px/1.2 var(--font-body); padding:0; }
+.field .hint { font-size:12px; color:var(--muted); }
+input,select,textarea { min-height:36px; padding:0 12px; font:400 14px/1.2 var(--font-body); background:var(--surface); color:var(--text); border:1px solid var(--field); border-radius:var(--r); width:100%; }
+input:hover,select:hover,textarea:hover { border-color:var(--text); }
+textarea { padding:8px 12px; min-height:84px; line-height:1.4; resize:vertical; }
+input.mono { font-family:var(--font-mono); }
+.row2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+@media (max-width:420px) { .row2 { grid-template-columns:1fr; } }
+.actions { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; padding-top:4px; }
+.btn { white-space:nowrap; display:inline-flex; align-items:center; justify-content:center; gap:6px; min-height:36px; padding:0 14px; font:600 14px/1 var(--font-body); border:1px solid var(--link); background:transparent; color:var(--link); border-radius:var(--r); cursor:pointer; text-decoration:none; }
+.btn:hover { background:var(--select); }
+.btn.primary { background:var(--primary); border-color:var(--primary); color:var(--on-primary); }
+.btn.primary:hover { background:var(--primary-hover); border-color:var(--primary-hover); }
+.btn.ghost { border-color:transparent; }
+.btn.bad { border-color:var(--cph-bad); color:var(--bad-fg); }
+.btn.bad:hover { background:var(--bad-bg); }
+.btn.sm { min-height:32px; padding:0 12px; font-size:13px; }
+.btn:active { opacity:.85; }
+.btn:disabled { opacity:.55; cursor:wait; }
+input:focus-visible,select:focus-visible,textarea:focus-visible { outline:2px solid var(--focus); outline-offset:2px; }
+input:disabled,select:disabled,textarea:disabled { opacity:.55; cursor:not-allowed; }
+.sign { font-size:12px; color:var(--muted); }
+
+.strip { display:flex; gap:8px; align-items:flex-start; padding:8px 12px; border-radius:var(--r); background:var(--ok-bg); color:var(--ok-fg); font-size:13px; }
+.strip .ic { color:var(--ok-ic); margin-top:1px; }
+.strip.warn { background:var(--warn-bg); color:var(--warn-fg); } .strip.warn .ic { color:var(--warn-ic); }
+.panel > .strip { margin:16px; }
+.result { display:flex; gap:8px; align-items:flex-start; padding:8px 12px; border-radius:var(--r); background:var(--ok-bg); color:var(--ok-fg); font-size:13px; }
+.result .ic { color:var(--ok-ic); margin-top:1px; }
+.seg { display:inline-flex; flex-wrap:wrap; border:1px solid var(--field); border-radius:var(--r); overflow:hidden; align-self:flex-start; }
+.seg label { display:flex; align-items:center; justify-content:center; min-height:34px; padding:0 14px; font:500 13px/1 var(--font-body); cursor:pointer; border-right:1px solid var(--line); }
+.seg label:last-child { border-right:0; }
+.seg input { position:absolute; opacity:0; width:1px; min-height:0; }
+.seg label:has(input:checked) { background:var(--primary); color:var(--on-primary); }
+.seg label:has(input:focus-visible) { outline:2px solid var(--focus); outline-offset:-4px; }
+.seg label:has(input:disabled) { color:var(--muted); cursor:not-allowed; text-decoration:line-through; }
+.matrix { min-width:0; }
+.matrix td,.matrix th { text-align:center; } .matrix td:first-child,.matrix th:first-child { text-align:left; }
+.yes { font-weight:700; } .no { color:var(--muted); }
+@media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
+</style>
+<header class="shellbar"><span class="brand"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m8 12.5 3 3 5-6"/></svg>Certapharm</span><span class="sep"></span><span class="app">Manager</span><span class="sp"></span><span class="env">devnet demo</span><span class="avatar" role="img" aria-label="Platform Authority">PA</span></header>
+<div class="layout">
+<aside class="side">
+  <nav aria-label="Manager"><a href="dashboard.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Overview</a><a href="participants.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="4"/><path d="M2 21v-2a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v2M17 4a4 4 0 0 1 0 8M22 21v-2a5 5 0 0 0-3-4.6"/></svg>Participants</a><a href="batches.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/></svg>Batches</a><a href="custody.html"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M8 19h8a3 3 0 0 0 0-6H8a3 3 0 0 1 0-6h8"/></svg>Custody</a><a href="alerts.html" aria-current="page"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 8 3 8H3s3-1 3-8M10 21a2 2 0 0 0 4 0"/></svg>Alerts</a></nav>
+  <div class="who"><b>Platform Authority</b><span class="mono">9BTQ…uG5L</span></div>
+</aside>
+<div><main>
+  <nav class="crumbs" aria-label="Breadcrumb"><a href="dashboard.html">Manager</a><span aria-hidden="true">/</span><span>Alerts</span></nav>
+  <header class="head"><div><h1>Alerts</h1><p>Only the Platform Authority raises or clears an alert. Raising on a lot that already has one replaces it.</p></div></header>
+
+  <div class="grid2">
+    <section class="panel"><h2>Raise an alert</h2>
+      <form class="body">
+        <div class="row2">
+          <div class="field"><label for="g">GTIN</label><input id="g" class="mono" value="02001234567893"></div>
+          <div class="field"><label for="l">Lot</label><input id="l" class="mono" placeholder="L2026D"></div>
+        </div>
+        <div class="field"><label for="v">Level</label><select id="v"><option>Recall</option><option>Suspected counterfeit</option><option>Cold chain breach</option><option>Regulator notice</option></select></div>
+        <div class="field"><label for="rc">Reason code</label><input id="rc" class="mono" placeholder="ANVISA-2026-001"></div>
+        <div class="field"><label for="pn">Public note</label><textarea id="pn" maxlength="140" placeholder="Shown to patients, in plain language."></textarea><span class="hint">Up to 140 bytes. Patients read this on the verdict page.</span></div>
+        <p class="strip "><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 11v6M12 7h.01"/></svg><span>Patients will see <b>Authentic, with alert</b> for this lot.</span></p>
+        <div class="actions"><button class="btn ghost" type="reset">Cancel</button><button class="btn primary" type="submit">Raise alert</button></div>
+      </form></section>
+    <section class="panel"><h2>Active alerts (2)</h2>
+      <div class="scroll"><table><thead><tr><th>Lot</th><th>Level</th><th>Reason</th><th>Raised</th><th><span class="sr">Actions</span></th></tr></thead><tbody>
+        <tr><td class="mono">L2026E</td><td><span class="chip warn"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>Recall</span></td><td><b class="mono" style="font-weight:500">ANVISA-DEMO-001</b><small>Demo recall: do not use this lot.</small></td><td class="num">12 Oct 2026</td><td><button class="btn sm" type="button">Clear</button></td></tr>
+        <tr><td class="mono">L2026B</td><td><span class="chip warn"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>Recall</span></td><td><b class="mono" style="font-weight:500">ANVISA-DEMO-001</b><small>Demo recall: do not use this lot.</small></td><td class="num">11 Oct 2026</td><td><button class="btn sm" type="button">Clear</button></td></tr>
+      </tbody></table></div>
+      <p class="strip "><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 11v6M12 7h.01"/></svg><span>An alert never makes a lot “Not recognized”. Only a missing or invalid certificate does.</span></p>
+    </section>
+  </div>
+</main></div>
+</div>
+<script>
+document.querySelectorAll("form").forEach(function(f){
+  f.addEventListener("submit",function(e){
+    e.preventDefault();
+    var b=f.querySelector(".btn.primary"); if(!b||b.disabled) return;
+    var old=b.innerHTML; b.disabled=true; b.setAttribute("aria-busy","true"); b.textContent="Working…";
+    var prev=f.querySelector(".result"); if(prev) prev.remove();
+    setTimeout(function(){
+      b.disabled=false; b.removeAttribute("aria-busy"); b.innerHTML=old;
+      var r=document.createElement("p"); r.className="result"; r.setAttribute("role","status");
+      r.innerHTML='<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m8 12.5 3 3 5-6"/></svg><span>Done and confirmed on devnet. This is an example, nothing was sent. <a class="mono" href="#">5hJ2kQvP…Kp4R</a></span>';
+      f.appendChild(r);
+    },900);
+  });
+});</script>

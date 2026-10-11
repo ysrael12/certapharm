@@ -8,3 +8,5 @@ export * from "./use-cases/register-batch.js";
 export * from "./use-cases/record-custody-event.js";
 export * from "./use-cases/verify-product.js";
 export * from "./use-cases/raise-alert.js";
+export * from "./use-cases/list-directory.js";
+export * from "./use-cases/revoke-participant.js";

@@ -1,8 +1,8 @@
 import type { Address } from "@solana/kit";
 import {
   deriveAttestationPda, deriveCredentialPda, deriveSchemaPda, deserializeAttestationData, fetchAllMaybeAttestation, fetchSchema,
-  getCloseAttestationInstruction, getCreateAttestationInstruction, getCreateCredentialInstruction,
-  getCreateSchemaInstruction, serializeAttestationData,
+  getAttestationDecoder, getCloseAttestationInstruction, getCreateAttestationInstruction, getCreateCredentialInstruction,
+  getCreateSchemaInstruction, serializeAttestationData, SOLANA_ATTESTATION_SERVICE_PROGRAM_ADDRESS,
 } from "sas-lib";
 import type {
   CertificateRecord, CertificateRegistry, IssuerCredential, IssuerOnboarding, SignerRef, TxRef,
@@ -80,6 +80,30 @@ export class SasCertificateRegistry implements CertificateRegistry {
     return this.sender.send([getCloseAttestationInstruction({
       payer: this.sender.payer, authority: signer, credential, attestation,
     })]);
+  }
+
+  async listByIssuers(issuers: readonly WalletAddress[]): Promise<CertificateRecord[]> {
+    const out: CertificateRecord[] = [];
+    const decoder = getAttestationDecoder();
+    for (const wallet of new Set(issuers)) {
+      const { batchSchema } = await issuerAddresses(wallet);
+      if (!(await accountExists(this.rpc, batchSchema))) continue;
+      const schema = await fetchSchema(this.rpc, batchSchema);
+      const accounts = await this.rpc.getProgramAccounts(SOLANA_ATTESTATION_SERVICE_PROGRAM_ADDRESS, {
+        encoding: "base64",
+        filters: [{ memcmp: { offset: 65n, bytes: batchSchema as never, encoding: "base58" } }],
+      }).send();
+      for (const a of accounts) {
+        const att = decoder.decode(Buffer.from(a.account.data[0], "base64"));
+        if (att.signer !== (wallet as string) || !isLive(att.expiry, this.clock.now())) continue;
+        const d = deserializeAttestationData(schema.data, Uint8Array.from(att.data)) as unknown as BatchData;
+        out.push({
+          issuer: wallet, attestation: a.pubkey, gtin: d.gtin as Gtin, lot: d.lot as LotNumber,
+          expiry: Number(d.expiry) as ExpiryDate, productName: d.product_name, dosage: d.dosage, country: d.country,
+        });
+      }
+    }
+    return out;
   }
 
   async findByBatchKey(batchKey: BatchKey, issuers: readonly WalletAddress[]): Promise<CertificateRecord | null> {

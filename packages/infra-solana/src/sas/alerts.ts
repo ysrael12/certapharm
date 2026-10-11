@@ -1,7 +1,8 @@
 import type { Address, KeyPairSigner } from "@solana/kit";
 import {
   deriveAttestationPda, deriveCredentialPda, deriveSchemaPda, deserializeAttestationData, fetchMaybeAttestation, fetchSchema,
-  getCloseAttestationInstruction, getCreateAttestationInstruction, serializeAttestationData,
+  getAttestationDecoder, getCloseAttestationInstruction, getCreateAttestationInstruction, serializeAttestationData,
+  SOLANA_ATTESTATION_SERVICE_PROGRAM_ADDRESS,
 } from "sas-lib";
 import type { AlertRegistry, TxRef } from "@certapharm/application";
 import type { AlertLevel, BatchAlert, BatchKey, Clock, WalletAddress } from "@certapharm/domain";
@@ -49,6 +50,30 @@ export class SasAlertRegistry implements AlertRegistry {
   async clear(batchKey: BatchKey): Promise<TxRef> {
     const { credential, attestation } = await this.context(batchKey);
     return this.sender.send([getCloseAttestationInstruction({ payer: this.sender.payer, authority: this.platform, credential, attestation })]);
+  }
+
+  async list(): Promise<BatchAlert[]> {
+    const [credential] = await deriveCredentialPda({ authority: this.platform.address, name: PLATFORM_CREDENTIAL_NAME });
+    const [schema] = await deriveSchemaPda({ credential, name: "batch-alert", version: SCHEMA_VERSION });
+    const schemaData = (await fetchSchema(this.rpc, schema)).data;
+    const accounts = await this.rpc.getProgramAccounts(SOLANA_ATTESTATION_SERVICE_PROGRAM_ADDRESS, {
+      encoding: "base64",
+      filters: [{ memcmp: { offset: 65n, bytes: schema as never, encoding: "base58" } }],
+    }).send();
+    const decoder = getAttestationDecoder();
+    const out: BatchAlert[] = [];
+    for (const a of accounts) {
+      const att = decoder.decode(Buffer.from(a.account.data[0], "base64"));
+      if (att.signer !== this.platform.address || !isLive(att.expiry, this.clock.now())) continue;
+      const d = deserializeAttestationData(schemaData, Uint8Array.from(att.data)) as unknown as Decoded;
+      const level = LEVEL_BY_CODE[Number(d.level)];
+      if (!level) continue;
+      out.push({
+        batchKey: asWallet(att.nonce) as unknown as BatchKey, level, reasonCode: d.reason_code, publicNote: d.public_note,
+        raisedBy: asWallet(att.signer), raisedAt: Number(d.raised_at),
+      });
+    }
+    return out;
   }
 
   async find(batchKey: BatchKey): Promise<BatchAlert | null> {

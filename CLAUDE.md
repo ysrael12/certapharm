@@ -21,15 +21,16 @@ Ordem de corte (do topo): UC9 withdraw → UI de operador → UC7 selos cNFT →
 packages/domain         TS puro, zero deps: shared, gs1, accreditation, origin, custody, sealing, alerts, verification
 packages/application    use cases (um arquivo cada) + ports (interfaces)
 packages/infra-solana   adapters: sas/, memo/, bubblegum/, projections/ (libsql)
-apps/cli                `cph` (commander) — único lugar com escrita/chaves
-apps/web                Next.js 15 App Router, só leitura, sem chaves secretas
+packages/runtime        composition root (modo `read` sem chave, modo `write` assina); CLI e web usam o mesmo
+apps/cli                `cph` (commander) — escrita por terminal
+apps/web                Next.js 15 App Router: páginas públicas só leitura e sem chave; `/manager` escreve com chaves demo no servidor, atrás de MANAGER_TOKEN
 ```
 Regras:
 - `domain` e `application` **nunca** importam `@solana/*`, `sas-lib`, `@metaplex-foundation/*` (ESLint `no-restricted-imports`).
 - Sem I/O nem `Date.now()` no domínio; injete `Clock`.
 - Use cases retornam `Result<Ok, DomainError | InfraError>`; só adapters lançam exceção.
 - A chain é a fonte da verdade; projeções off-chain (`unit_seals`, `custody_index`) devem ser reconstruíveis.
-- `apps/web` builda sem `PLATFORM_SECRET`. Chaves demo em `./.keys/*.json` (gitignored).
+- `apps/web` builda sem `PLATFORM_SECRET`; as páginas públicas só precisam de `RPC_URL` e `PLATFORM_AUTHORITY`. Chaves demo em `./.keys/*.json` (gitignored). `/manager` fica desligado sem `MANAGER_TOKEN`; é atalho de devnet (em produção, cada empresa assina com a própria wallet).
 - TS strict + `noUncheckedIndexedAccess` + `exactOptionalPropertyTypes`; `zod` só nas bordas; `pino` para logs; `vitest` para testes.
 
 ## Linguagem ubíqua (use exatamente estes termos no código, UI e logs)
@@ -46,7 +47,7 @@ Bounded contexts: BC1 Accreditation, BC2 Origin Certification (core), BC3 Chain 
 
 ## UI / API pública
 - Rotas: `/`, `/scan`, `/01/[gtin]/10/[lot]`, `/01/[gtin]/10/[lot]/21/[serial]`, `/api/verify`, `/api/seal/...json`, `/audit/[batchKey]`. `/api/verify` segue exatamente o contrato JSON de `specs/05` (teste zod); nunca 404 para lote desconhecido; `s-maxage=15`; 30 req/min/IP.
-- Mobile-first, veredito visível sem rolar. pt-BR por padrão, `?lang=en` para o júri. Cor nunca é o único sinal (ícone + palavra).
+- Mobile-first, veredito visível sem rolar. **Inglês por padrão, `?lang=pt` para português** (decisão do usuário, mudou em relação ao spec 05). Cor nunca é o único sinal (ícone + palavra).
 - Sem termos cripto na tela do paciente (wallet, NFT, token, attestation) — só em `/audit`.
 - Vermelho `#c1121f` **somente** em NOT_RECOGNIZED. Tokens: ink `#003049`, paper `#fdf0d5`, ok `#669bbc`, warn `#e0a100`, bad `#c1121f`, bad-deep `#780000`, muted `#3d5a6c`. Fontes: Space Grotesk + IBM Plex Sans.
 - Metas: Lighthouse a11y ≥ 95, contraste ≥ 4.5:1, p95 de verify < 2 s.
@@ -75,4 +76,4 @@ Cronograma, spikes S1–S3, demo script e limitações conhecidas: `specs/06-del
 Ao implementar um use case ou tela, leia primeiro o spec correspondente (`01` domínio, `02` on-chain, `03` arquitetura, `04` use cases, `05` verificação/UI) e atenda seus critérios de aceite.
 
 ## Design system
-Referência visual única: `design/design-system.html` (paleta, tipografia, três telas de veredito, regras e tokens `--cph-*`). Publicado em https://claude.ai/artifact/C3rN4ktK6ZkLVR8YXk7hCD. `certapharm-diagramas.html` já usa a mesma paleta. Ao construir `apps/web`, siga este arquivo; em caso de conflito, vale `specs/05-verification-api-ui.md`.
+Telas validadas (paciente + manager) em `design/screens/` e `design/screens/manager/`; o CSS delas virou `apps/web/src/styles/`. Referência de tokens: `design/design-system.html` (paleta, tipografia, três telas de veredito, regras e tokens `--cph-*`). Publicado em https://claude.ai/artifact/C3rN4ktK6ZkLVR8YXk7hCD. `certapharm-diagramas.html` já usa a mesma paleta. Ao construir `apps/web`, siga este arquivo; em caso de conflito, vale `specs/05-verification-api-ui.md`.

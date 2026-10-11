@@ -18,7 +18,7 @@ type Decoded = { role: number; display_name: string; legal_id_hash: string };
 /** `participant` attestations under the Platform credential. The Platform Authority is the only signer. */
 export class SasAccreditationRegistry implements AccreditationRegistry {
   private ctx: Promise<{ credential: Address; schema: Address; schemaData: Awaited<ReturnType<typeof fetchSchema>>["data"] }> | undefined;
-  private issuers: { at: number; list: Participant[] } | undefined;
+  private all: { at: number; list: Participant[] } | undefined;
 
   constructor(
     private readonly rpc: SolanaRpc,
@@ -59,7 +59,7 @@ export class SasAccreditationRegistry implements AccreditationRegistry {
     const data = serializeAttestationData(schemaData, {
       role: ROLE_CODE[p.role], display_name: p.displayName, legal_id_hash: p.legalIdHash,
     });
-    this.issuers = undefined;
+    this.all = undefined;
     return this.sender.send([getCreateAttestationInstruction({
       payer: this.sender.payer, authority: this.platform, credential, schema, attestation, nonce, data,
       expiry: BigInt(p.accreditedAt + ACCREDITATION_VALIDITY),
@@ -69,7 +69,7 @@ export class SasAccreditationRegistry implements AccreditationRegistry {
   async revoke(wallet: WalletAddress): Promise<TxRef> {
     const { credential, schema } = await this.context();
     const [attestation] = await deriveAttestationPda({ credential, schema, nonce: asAddress(wallet) });
-    this.issuers = undefined;
+    this.all = undefined;
     return this.sender.send([getCloseAttestationInstruction({
       payer: this.sender.payer, authority: this.platform, credential, attestation,
     })]);
@@ -94,9 +94,13 @@ export class SasAccreditationRegistry implements AccreditationRegistry {
     return found;
   }
 
-  /** `getProgramAccounts` filtered by the participant schema. Cached for 60 s. */
   async listIssuers(): Promise<Participant[]> {
-    if (this.issuers && Date.now() - this.issuers.at < ISSUERS_TTL_MS) return this.issuers.list;
+    return (await this.listAll()).filter((p) => p.role === "MANUFACTURER" || p.role === "IMPORTER");
+  }
+
+  /** `getProgramAccounts` filtered by the participant schema. Cached for 60 s. */
+  async listAll(): Promise<Participant[]> {
+    if (this.all && Date.now() - this.all.at < ISSUERS_TTL_MS) return this.all.list;
     const { schema, schemaData } = await this.context();
     const accounts = await this.rpc.getProgramAccounts(SOLANA_ATTESTATION_SERVICE_PROGRAM_ADDRESS, {
       encoding: "base64",
@@ -107,9 +111,9 @@ export class SasAccreditationRegistry implements AccreditationRegistry {
     for (const a of accounts) {
       const att = decoder.decode(Buffer.from(a.account.data[0], "base64"));
       const p = this.toParticipant(att, schemaData);
-      if (p && (p.role === "MANUFACTURER" || p.role === "IMPORTER")) list.push(p);
+      if (p) list.push(p);
     }
-    this.issuers = { at: Date.now(), list };
+    this.all = { at: Date.now(), list };
     return list;
   }
 }
