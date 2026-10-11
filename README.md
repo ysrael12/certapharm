@@ -310,7 +310,29 @@ It returns the JSON contract from `certapharm-specs/specs/05-verification-api-ui
 and answers 429 after 30 requests a minute from one IP. `/api/health` reports whether the server sees its settings
 and can reach the chain.
 
-### 7. Run the tests and the checks
+### 7. The manager (local only)
+
+The manager writes to the chain with the demo keys in `./.keys/`, so it runs on your machine and stays off on the
+deployed site. Run `cph demo:seed` once, set `MANAGER_TOKEN` in `.env`, start `pnpm --filter @certapharm/web dev` and
+open `http://localhost:3000/manager`. Sign in with the token.
+
+| Sign in | Overview |
+|---|---|
+| <img src="docs/img/manager-login.png" width="380"> | <img src="docs/img/manager-overview.png" width="380"> |
+
+| Participants | Batches |
+|---|---|
+| <img src="docs/img/manager-participants.png" width="380"> | <img src="docs/img/manager-batches.png" width="380"> |
+
+| Custody (record an event, read the trail) | Alerts |
+|---|---|
+| <img src="docs/img/manager-custody.png" width="380"> | <img src="docs/img/manager-alerts.png" width="380"> |
+
+Try this flow: on **Custody**, pick an actor and record an event for lot `L2026E`. The form only offers what that role
+may record. On **Alerts**, raise an alert and clear it; clearing takes two clicks to confirm. Then open the lot's public
+page and see the verdict change. Every write is a devnet transaction and shows its signature.
+
+### 8. Run the tests and the checks
 
 ```sh
 pnpm install
