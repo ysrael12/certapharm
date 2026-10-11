@@ -249,6 +249,79 @@ The manager is at `/manager` and signs in with `MANAGER_TOKEN`. It reads actor k
 All demo GTINs and names are fictitious. The `200` GTIN prefix is reserved by GS1 for restricted circulation, so
 it cannot collide with a real product.
 
+## How to test it
+
+The demo runs on Solana devnet at **https://certapharm.vercel.app**. No account or wallet is needed. Screenshots below
+were taken with Playwright against the live site at a phone width of 390 px.
+
+### 1. Scan a code with the phone camera
+
+Open the phone's own camera and point it at one of the QR codes in [`demo/`](demo/). It opens the verdict page
+directly, with no app to install. You can also open the links by hand:
+
+| QR file | Link | Expected verdict |
+|---|---|---|
+| `qr-L2026D.png` | `/01/02001234567893/10/L2026D` | Authentic |
+| `qr-L2026E.png` | `/01/02001234567893/10/L2026E` | Authentic, with alert (recall) |
+| `qr-L2026X.png` | `/01/02001234567893/10/L2026X` | Not recognized |
+| `qr-L2026D-0001.png` | `/01/02001234567893/10/L2026D/21/0001` | Authentic, unit sealed |
+| `qr-L2026D-9999.png` | `/01/02001234567893/10/L2026D/21/9999` | Not recognized, unit has no seal |
+
+### 2. The three verdicts
+
+| Authentic | Authentic, with alert | Not recognized |
+|---|---|---|
+| <img src="docs/img/authentic.png" width="220"> | <img src="docs/img/recall.png" width="220"> | <img src="docs/img/not-recognized.png" width="220"> |
+
+Each screen shows the verdict as an icon, a word and a color, so color is never the only signal. Add `?lang=pt` to any
+page for Portuguese.
+
+### 3. One box, not just one lot
+
+A lot-level check says the lot is genuine. A serial in the link checks that exact box against its unit seal.
+
+| Sealed unit (`/21/0003`) | Never sealed (`/21/9999`) |
+|---|---|
+| <img src="docs/img/unit-sealed.png" width="220"> | <img src="docs/img/unit-unsealed.png" width="220"> |
+
+### 4. Type or scan a code in the browser
+
+The home page accepts a pasted link or a typed code and sends you to the verdict page. `/scan` opens the camera in
+the browser and does the same on a scan.
+
+| Home | Scan |
+|---|---|
+| <img src="docs/img/home.png" width="220"> | <img src="docs/img/scan.png" width="220"> |
+
+### 5. Check the evidence
+
+Every verdict page links to `/audit/<batchKey>`. It lists the certificate and the custody events in order, each with
+its transaction signature, so anyone can look it up on a Solana explorer (devnet).
+
+<img src="docs/img/audit.png" width="320">
+
+### 6. Call the API
+
+```sh
+curl "https://certapharm.vercel.app/api/verify?link=/01/02001234567893/10/L2026E"
+```
+
+It returns the JSON contract from `certapharm-specs/specs/05-verification-api-ui.md`, never a 404 for an unknown lot,
+and answers 429 after 30 requests a minute from one IP. `/api/health` reports whether the server sees its settings
+and can reach the chain.
+
+### 7. Run the tests and the checks
+
+```sh
+pnpm install
+pnpm test          # domain, application, adapters, web
+pnpm lint
+pnpm --filter @certapharm/web build
+```
+
+Adapter tests that need a network are skipped when `RPC_URL` is not set. To repeat the on-chain demo from the
+terminal (needs `.env` and a funded devnet wallet), run `cph demo:seed` and then `cph verify`.
+
 ## Security model and limits
 
 - Only the Platform Authority accredits participants and raises alerts. Each issuer can create or withdraw only
