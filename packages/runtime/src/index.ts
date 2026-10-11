@@ -11,13 +11,16 @@ import {
   SasPlatformSetup, TxSender, loadKeyFile, loadOrCreateKeyFile, makeConnection,
 } from "@certapharm/infra-solana";
 
-/** Walks up from `start` to the folder holding pnpm-workspace.yaml. */
+/**
+ * Walks up from `start` to the folder holding pnpm-workspace.yaml. Outside the repository (a serverless function has no
+ * workspace file) it falls back to `start`, so importing this module never throws; configuration then comes from env vars.
+ */
 function findRoot(start: string): string {
   let dir = resolve(start);
   for (;;) {
     if (existsSync(resolve(dir, "pnpm-workspace.yaml"))) return dir;
     const up = dirname(dir);
-    if (up === dir) throw new Error("Workspace root not found (pnpm-workspace.yaml)");
+    if (up === dir) return resolve(start);
     dir = up;
   }
 }
