@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 import type { Verdict } from "@certapharm/domain";
-import { ALERT_LABEL, EVENT_VERB, FINDING_COPY, ROLE_LABEL, VERDICT_COPY, fmtDate, fmtDateTime, fmtTemp, t, type Lang } from "@/lib/i18n";
+import { ALERT_HEADLINE, EVENT_LABEL, FINDING_COPY, VERDICT_COPY, fmtDateTime, fmtMonthYear, fmtTemp, regionName, t, type Lang } from "@/lib/i18n";
 import type { LoadedReport } from "@/lib/report";
-import { Icon, ROLE_ICON } from "./icons";
+import { Icon } from "./icons";
 
 const langHref = (path: string, lang: Lang) => (lang === "pt" ? path : `${path}?lang=pt`);
 const withLang = (path: string, lang: Lang) => (lang === "pt" ? `${path}?lang=pt` : path);
@@ -38,118 +38,98 @@ export function DemoFooter({ lang, cluster, checkedAt }: { lang: Lang; cluster: 
   );
 }
 
-const BAND: Record<Verdict, { cls: string; icon: "check" | "warn" }> = {
+const BAND: Record<Verdict, { cls: string; icon: "check" | "warn" | "xcircle" }> = {
   AUTHENTIC: { cls: "ok", icon: "check" },
   AUTHENTIC_WITH_ALERT: { cls: "warn", icon: "warn" },
-  NOT_RECOGNIZED: { cls: "bad", icon: "warn" },
+  NOT_RECOGNIZED: { cls: "bad", icon: "xcircle" },
 };
 
 const PHARMACIST = { en: "Talk to your pharmacist before using.", pt: "Fale com o farmacêutico antes de usar." };
 
+/** The approved mobile mock (fidelidade.webp): a tall band with icon and headline, then a flat body. */
 export function VerdictView({ loaded, lang, path }: { loaded: LoadedReport; lang: Lang; path: string }) {
-  const { report: r } = loaded;
+  const { report: r, query } = loaded;
+  const pt = lang === "pt";
   const band = BAND[r.verdict];
   const copy = VERDICT_COPY[r.verdict];
   const notices = r.findings.flatMap((f) => (FINDING_COPY[f.code] ? [t(FINDING_COPY[f.code]!, lang)] : []));
-  const sub = r.verdict === "AUTHENTIC_WITH_ALERT"
-    ? `${r.alert ? t(ALERT_LABEL[r.alert.level], lang) : (notices[0] ?? "")}. ${PHARMACIST[lang]}`
-    : t(copy.sub, lang);
-  const proof = `/audit/${loaded.batchKey}`;
+  const proof = withLang(`/audit/${loaded.batchKey}`, lang);
+  const product = r.batch ? `${r.batch.productName}` : "";
 
   return (
-    <Shell lang={lang} path={path} footer={<DemoFooter lang={lang} cluster={loaded.cluster} checkedAt={loaded.checkedAt} />}>
-      <main>
-        <section className={`band ${band.cls}`} aria-labelledby="verdict">
-          <Icon name={band.icon} />
-          <h1 id="verdict">{t(copy.headline, lang)}</h1>
-          <p role="status">{sub}</p>
-          {r.alert && <span className="code">{r.alert.reasonCode}</span>}
-        </section>
+    <div className="app">
+      <header className={`vband ${band.cls}`}>
+        <div className="vtop">
+          <a className="brand" href={withLang("/", lang)} aria-label="Certapharm"><Icon name="check" /><span>Certapharm</span></a>
+          <nav className="lang" aria-label={pt ? "Idioma" : "Language"}>
+            <a href={path} lang="en" aria-current={lang === "en" ? "true" : "false"}>EN</a>
+            <a href={`${path}?lang=pt`} lang="pt-BR" aria-current={pt ? "true" : "false"}>PT</a>
+          </nav>
+        </div>
+        <Icon name={band.icon} className="big" />
+        <h1 id="verdict">{t(copy.headline, lang)}</h1>
+      </header>
 
-        {r.verdict === "NOT_RECOGNIZED" ? (
+      <main className="vbody" aria-labelledby="verdict">
+        <p className="sr" role="status">{r.verdict === "AUTHENTIC_WITH_ALERT" ? `${PHARMACIST[lang]}` : t(copy.sub, lang)}</p>
+
+        {r.verdict === "AUTHENTIC" && r.batch && (
           <>
-            <section className="sec" aria-labelledby="scanned">
-              <h2 id="scanned">{lang === "pt" ? "O que você escaneou" : "What you scanned"}</h2>
-              <dl className="facts">
-                <dt>GTIN</dt><dd className="mono">{loaded.query.gtin}</dd>
-                <dt>{lang === "pt" ? "Lote" : "Lot"}</dt><dd className="mono">{loaded.query.lot}</dd>
-                {loaded.query.serial && <><dt>{lang === "pt" ? "Série" : "Serial"}</dt><dd className="mono">{loaded.query.serial}</dd></>}
-              </dl>
-              <p className="muted">
-                {lang === "pt"
-                  ? "Nenhum fabricante autorizado registrou este lote. Pode ser um erro de leitura: tente escanear de novo."
-                  : "No authorized maker has registered this lot. It may be a misread: try scanning again."}
-              </p>
-            </section>
-            <div className="actions">
-              <a className="btn bad" href="https://www.gov.br/anvisa" rel="noopener noreferrer">
-                <Icon name="report" /><span>{lang === "pt" ? "Denunciar à Anvisa" : "Report to Anvisa"}</span>
-              </a>
-              <a className="btn" href={withLang("/scan", lang)}>
-                <Icon name="camera" /><span>{lang === "pt" ? "Escanear de novo" : "Scan again"}</span>
-              </a>
+            <p className="vname">{r.batch.productName}</p>
+            <div className="vmeta">
+              <span>{pt ? "Lote" : "Lot"} {query.lot} · {pt ? "val." : "exp"} {fmtMonthYear(r.batch.expiry)}</span>
+              <span>{r.batch.issuer.displayName ?? r.batch.issuer.wallet} · {regionName(r.batch.country, lang)}</span>
             </div>
-          </>
-        ) : (
-          <>
-            {r.alert && (
-              <section className="sec" aria-labelledby="notice">
-                <h2 id="notice">{lang === "pt" ? "Aviso oficial" : "Official notice"}</h2>
-                <p className="note"><Icon name="warn" /><span>{r.alert.publicNote}</span></p>
-              </section>
-            )}
-            {notices.length > 0 && !r.alert && (
-              <section className="sec" aria-labelledby="notice">
-                <h2 id="notice">{lang === "pt" ? "Avisos" : "Notices"}</h2>
-                {notices.map((n) => <p key={n} className="note"><Icon name="warn" /><span>{n}</span></p>)}
-              </section>
-            )}
-            {r.batch && (
-              <>
-                <section className="sec" aria-labelledby="product">
-                  <h2 id="product">{lang === "pt" ? "Produto" : "Product"}</h2>
-                  <p className="product">{r.batch.productName}</p>
-                  <dl className="facts">
-                    <dt>{lang === "pt" ? "Dose" : "Dose"}</dt><dd>{r.batch.dosage}</dd>
-                    <dt>{lang === "pt" ? "Lote" : "Lot"}</dt><dd className="mono">{loaded.query.lot}</dd>
-                    <dt>{lang === "pt" ? "Validade" : "Expiry"}</dt><dd>{fmtDate(r.batch.expiry, lang)}</dd>
-                  </dl>
-                </section>
-                <section className="sec" aria-labelledby="maker">
-                  <h2 id="maker">{lang === "pt" ? "Fabricante" : "Maker"}</h2>
-                  <div className="issuer">
-                    <b>{r.batch.issuer.displayName ?? r.batch.issuer.wallet}</b>
-                    <span className="muted">{lang === "pt" ? "Fabricante autorizado" : "Authorized manufacturer"}</span>
-                  </div>
-                </section>
-              </>
-            )}
             {r.trail.length > 0 && (
-              <section className="sec" aria-labelledby="trail">
-                <h2 id="trail">{lang === "pt" ? "Caminho da caixa" : "Path of this box"}</h2>
-                <ol className="trail">
+              <>
+                <hr className="vrule" />
+                <ul className="vlist" aria-label={pt ? "Caminho da caixa" : "Path of this box"}>
                   {r.trail.map((e) => (
                     <li key={e.signature}>
-                      <span className="node"><Icon name={e.actorRole ? ROLE_ICON[e.actorRole] : "box"} /></span>
                       <span>
-                        <b>{e.actorName ?? "-"} {t(EVENT_VERB[e.type], lang)}</b>
-                        <small>
-                          {fmtDateTime(e.occurredAt, lang)}{e.actorRole ? ` · ${t(ROLE_LABEL[e.actorRole], lang)}` : ""}
-                          {e.temperatureC !== undefined && <span className="temp">{fmtTemp(e.temperatureC, lang)}</span>}
-                        </small>
+                        {t(EVENT_LABEL[e.type], lang)} · {e.actorName ?? "-"}
+                        {e.temperatureC !== undefined && <> · {fmtTemp(e.temperatureC, lang)}</>}
                       </span>
                     </li>
                   ))}
-                </ol>
-              </section>
+                </ul>
+              </>
             )}
           </>
         )}
-        <a className="link-row" href={withLang(proof, lang)}>
-          <span>{lang === "pt" ? "Ver a prova pública" : "See the public proof"}</span><Icon name="arrow" />
-        </a>
+
+        {r.verdict === "AUTHENTIC_WITH_ALERT" && (
+          <>
+            <p className="vtitle">{r.alert ? t(ALERT_HEADLINE[r.alert.level], lang) : (notices[0] ?? t(copy.sub, lang))}</p>
+            <div className="vmeta">
+              <span>{product ? `${product} · ` : ""}{pt ? "Lote" : "Lot"} {query.lot}{r.alert ? ` · ${r.alert.reasonCode}` : ""}</span>
+              {r.alert && <span>{r.alert.publicNote}</span>}
+              {r.alert && notices.map((n) => <span key={n}>{n}</span>)}
+              {!r.alert && notices.slice(1).map((n) => <span key={n}>{n}</span>)}
+              <span>{PHARMACIST[lang]}</span>
+            </div>
+            <a className="vbtn" href={proof}>{pt ? "Ver detalhes" : "See details"}</a>
+          </>
+        )}
+
+        {r.verdict === "NOT_RECOGNIZED" && (
+          <>
+            <p className="vtitle">{pt ? "Nenhum registro encontrado" : "No record found"}</p>
+            <div className="vmeta">
+              <span>{pt ? "Este lote nunca foi certificado. Não compre nem use." : "This lot was never certified. Don't buy or use it."}</span>
+              <span className="mono">GTIN {query.gtin} · {pt ? "Lote" : "Lot"} {query.lot}{query.serial ? ` · ${query.serial}` : ""}</span>
+            </div>
+            <a className="vbtn bad" href="https://www.gov.br/anvisa" rel="noopener noreferrer">{pt ? "Denunciar à Anvisa" : "Report to Anvisa"}</a>
+            <a className="vlink" href={withLang("/scan", lang)}><Icon name="camera" />{pt ? "Escanear de novo" : "Scan again"}</a>
+          </>
+        )}
+
+        {r.verdict !== "AUTHENTIC_WITH_ALERT" && (
+          <a className="vlink" href={proof}>{pt ? "Ver a prova pública" : "See the public proof"}<Icon name="arrow" /></a>
+        )}
       </main>
-    </Shell>
+      <DemoFooter lang={lang} cluster={loaded.cluster} checkedAt={loaded.checkedAt} />
+    </div>
   );
 }
 

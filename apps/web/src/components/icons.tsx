@@ -1,6 +1,7 @@
 const PATHS = {
   check: <><circle cx="12" cy="12" r="10" /><path d="m8 12.5 3 3 5-6" /></>,
   warn: <><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" /><path d="M12 9v4M12 17h.01" /></>,
+  xcircle: <><circle cx="12" cy="12" r="10" /><path d="m15 9-6 6M9 9l6 6" /></>,
   info: <><circle cx="12" cy="12" r="10" /><path d="M12 11v6M12 7h.01" /></>,
   factory: <><path d="M3 21V10l6 4V10l6 4V6h6v15z" /><path d="M7 21v-3M12 21v-3M17 21v-3" /></>,
   truck: <><path d="M2 6h11v10H2zM13 10h4l4 3v3h-8z" /><circle cx="7" cy="18" r="2" /><circle cx="17" cy="18" r="2" /></>,

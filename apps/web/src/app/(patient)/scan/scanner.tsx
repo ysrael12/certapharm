@@ -54,7 +54,7 @@ export function Scanner({ lang }: { lang: Lang }) {
           ].map((s, i) => <i key={i} aria-hidden="true" style={{ position: "absolute", width: 44, height: 44, color: "var(--cph-ok)", ...s }} />)}
         </div>
         <p style={{ textAlign: "center", fontSize: 16, maxWidth: "28ch" }}>
-          {pt ? "Aponte a câmera para o QR ou DataMatrix da caixa." : "Point the camera at the box's QR or DataMatrix."}
+          {pt ? "Aponte para o código na caixa" : "Point at the code on the box"}
         </p>
         <p className="mono" style={{ color: "var(--cph-ok)", textAlign: "center" }} role="status">{message}</p>
       </section>

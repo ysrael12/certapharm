@@ -3,6 +3,10 @@
 Proof of origin for every medicine box, verifiable by anyone, on Solana.
 Built for the Colosseum 2026 hackathon (Solana track).
 
+<video src="docs/certapharm-teaser.mp4" controls muted playsinline width="100%">
+  <a href="docs/certapharm-teaser.mp4">Watch the pitch teaser</a>
+</video>
+
 ## The problem
 
 Falsified and diverted medicines reach patients because a box carries no proof that a real, accredited maker
@@ -12,8 +16,9 @@ cannot query them from a pharmacy counter, and the registries are not open to in
 ## What Certapharm does
 
 A manufacturer certifies a lot. Distributors, carriers and pharmacies sign custody events as the lot moves.
-A patient scans the GS1 QR code already printed on the box and gets one of three answers, with no wallet and
-no account:
+A patient points the phone's own camera at the GS1 QR code already printed on the box. The code is a plain web
+link, so the camera opens the verdict page directly, with no app, wallet or account (`/scan` covers DataMatrix codes,
+which most cameras do not open). The answer is one of three:
 
 | Verdict | Meaning |
 |---|---|
@@ -213,7 +218,8 @@ pnpm --filter @certapharm/cli cph verify https://certapharm.vercel.app/01/020012
 Then open the site:
 
 ```sh
-# .env needs RPC_URL, PLATFORM_AUTHORITY (public key) and, for /manager, MANAGER_TOKEN (a long random string)
+# .env needs RPC_URL, PLATFORM_AUTHORITY (public key), PUBLIC_BASE_URL (the address printed in the QR codes)
+# and, for /manager, MANAGER_TOKEN (a long random string)
 pnpm --filter @certapharm/web dev          # http://localhost:3000
 ```
 

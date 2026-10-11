@@ -43,6 +43,29 @@ export const EVENT_VERB: Record<CustodyEventType, Pair> = {
   STORED: p("stored", "armazenou"),
   DISPENSED: p("dispensed", "dispensou"),
 };
+export const EVENT_LABEL: Record<CustodyEventType, Pair> = {
+  SHIPPED: p("Shipped", "Enviado"),
+  RECEIVED: p("Received", "Recebido"),
+  STORED: p("Stored", "Armazenado"),
+  DISPENSED: p("Dispensed", "Dispensado"),
+};
+
+/** Bold line under the band on the alert screen (approved mock: "Recall in effect"). */
+export const ALERT_HEADLINE: Record<AlertLevel, Pair> = {
+  RECALL: p("Recall in effect", "Recolhimento em vigor"),
+  SUSPECTED_COUNTERFEIT: p("Suspected counterfeit", "Suspeita de falsificação"),
+  COLD_CHAIN_BREACH: p("Cold chain breach", "Quebra da cadeia fria"),
+  REGULATOR_NOTICE: p("Notice from the regulator", "Aviso do órgão regulador"),
+};
+
+export const fmtMonthYear = (unixSeconds: number): string => {
+  const d = new Date(unixSeconds * 1000);
+  return `${String(d.getUTCMonth() + 1).padStart(2, "0")}/${d.getUTCFullYear()}`;
+};
+export const regionName = (code: string, lang: Lang): string => {
+  try { return new Intl.DisplayNames([locale(lang)], { type: "region" }).of(code.toUpperCase()) ?? code; } catch { return code; }
+};
+
 export const ROLE_LABEL: Record<ParticipantRole, Pair> = {
   MANUFACTURER: p("manufacturer", "fabricante"),
   IMPORTER: p("importer", "importador"),

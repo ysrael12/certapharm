@@ -141,3 +141,33 @@ main > .band { margin-inline: 0; }
 .aud-b small { color: var(--muted); }
 .aud-b b { font: 500 15px/1.3 var(--font-display); }
 .aud-ignored { opacity: .75; }
+
+/* Verdict screens: the approved mobile mock (fidelidade.webp). Tall band with icon and headline at its foot, flat body, dotted list, outlined button. */
+:root { --bad-text: #c1121f; --band-chip: rgba(0, 48, 73, .14); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bad-text: #ff8a92; } }
+:root[data-theme="dark"] { --bad-text: #ff8a92; }
+.vband { min-height: 248px; padding: 12px var(--gutter) 24px; display: flex; flex-direction: column; gap: 12px; }
+.vband.ok { background: var(--cph-ok); color: var(--cph-ink); }
+.vband.warn { background: var(--cph-warn); color: var(--cph-ink); }
+.vband.bad { background: var(--cph-bad); color: var(--cph-paper); --band-chip: rgba(253, 240, 213, .2); }
+.vtop { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: auto; min-height: 44px; }
+.vtop .brand { color: inherit; font-size: 16px; }
+.vtop .brand .ic { color: inherit; width: 20px; height: 20px; }
+.vtop .lang { border-color: currentColor; }
+.vtop .lang a { color: inherit; }
+.vtop .lang a[aria-current="true"] { background: var(--band-chip); color: inherit; }
+.vband .ic.big { width: 32px; height: 32px; }
+.vband h1 { font-size: 32px; font-weight: 700; letter-spacing: -.015em; line-height: 1.1; max-width: 12ch; }
+.vbody { display: flex; flex-direction: column; gap: 12px; padding: 24px var(--gutter) 16px; }
+.vname { font: 700 20px/1.2 var(--font-display); }
+.vmeta { display: flex; flex-direction: column; gap: 4px; color: var(--muted); font-size: 14px; }
+.vtitle { font: 700 18px/1.2 var(--font-display); }
+.vrule { border: 0; border-top: 1px solid var(--line); margin: 4px 0; width: 100%; }
+.vlist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; font: 500 14px/1.3 var(--font-display); }
+.vlist li { display: grid; grid-template-columns: 8px minmax(0, 1fr); gap: 12px; align-items: baseline; }
+.vlist li::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--cph-ok); }
+.vlist .temp { margin-left: 4px; }
+.vbtn { display: flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 16px; margin-top: 4px; border: 1.5px solid var(--text); border-radius: 12px; color: var(--text); text-decoration: none; font: 600 15px/1.2 var(--font-display); white-space: nowrap; }
+.vbtn:hover { background: var(--hover, #f3ead2); }
+.vbtn.bad { color: var(--bad-text); border-color: var(--bad-text); }
+.vlink { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; font: 500 14px/1.2 var(--font-body); color: var(--link); }
