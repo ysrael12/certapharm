@@ -7,7 +7,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ l
   const lang = resolveLang(sp.lang);
   const pt = lang === "pt";
   return (
-    <Shell lang={lang} path="/">
+    <Shell lang={lang} path="/check">
       <main style={{ display: "flex", flexDirection: "column", flex: 1 }}>
         <section className="band" style={{ background: "var(--ink-bg)", color: "var(--on-ink)", paddingBlock: "36px 40px", gap: 16 }}>
           <span className="eyebrow" style={{ color: "var(--cph-ok)" }}>{pt ? "Verificação pública" : "Public check"}</span>

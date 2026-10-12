@@ -6,7 +6,7 @@ export function GET(req: NextRequest) {
   const raw = (req.nextUrl.searchParams.get("code") ?? "").trim();
   const pt = req.nextUrl.searchParams.get("lang") === "pt";
   const suffix = pt ? "?lang=pt" : "";
-  const fail = () => NextResponse.redirect(new URL(`/?error=1${pt ? "&lang=pt" : ""}`, req.url));
+  const fail = () => NextResponse.redirect(new URL(`/check?error=1${pt ? "&lang=pt" : ""}`, req.url));
 
   let link = Gs1DigitalLink.parse(raw);
   if (!link.ok) {

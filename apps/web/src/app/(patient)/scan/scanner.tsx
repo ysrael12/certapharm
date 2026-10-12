@@ -59,7 +59,7 @@ export function Scanner({ lang }: { lang: Lang }) {
         <p className="mono" style={{ color: "var(--cph-ok)", textAlign: "center" }} role="status">{message}</p>
       </section>
       <div className="actions">
-        <a className="btn" href={pt ? "/?lang=pt" : "/"}>{pt ? "Digitar o código" : "Type the code instead"}</a>
+        <a className="btn" href={pt ? "/check?lang=pt" : "/check"}>{pt ? "Digitar o código" : "Type the code instead"}</a>
       </div>
     </main>
   );
